@@ -44,6 +44,7 @@ export function Layout(props: PropsWithChildren<LayoutProps>) {
         ))}
         <link rel="stylesheet" href={`/public/pico.${themeColor}.min.css`} />
         <link rel="stylesheet" href="/public/pico.colors.min.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/tokyo-night-dark.min.css" />
         <link rel="stylesheet" href="/public/hollo.css" />
         <link
           rel="icon"

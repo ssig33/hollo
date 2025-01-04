@@ -9,6 +9,7 @@ import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import { escape } from "es-toolkit";
 import MarkdownIt from "markdown-it";
 import replaceLink from "markdown-it-replace-link";
+import markdownItHighlightjs from "markdown-it-highlightjs";
 import { persistAccount } from "./federation/account";
 import { type ASPost, isPost } from "./federation/post";
 import * as schema from "./schema";
@@ -51,6 +52,7 @@ export async function formatText(
 ): Promise<FormatResult> {
   // List all mentions:
   const draft = new MarkdownIt({ linkify: true, html: ALLOW_HTML })
+    .use(markdownItHighlightjs)
     .use(mention, {})
     .use(hashtag, {});
   const draftEnv: { mentions: string[] } = { mentions: [] };
@@ -99,6 +101,7 @@ export async function formatText(
 
   // Render the final HTML:
   const md = new MarkdownIt({ linkify: true, html: ALLOW_HTML })
+    .use(markdownItHighlightjs)
     .use(mention, {
       link(handle) {
         if (handle in handles) return handles[handle].href;
