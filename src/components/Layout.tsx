@@ -39,7 +39,7 @@ export function Layout(props: PropsWithChildren<LayoutProps>) {
             type={link.type}
           />
         ))}
-        <link rel="stylesheet" href="/public/pico.min.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.cyan.min.css" />
         <link rel="stylesheet" href="/public/pico.colors.min.css" />
         <link
           rel="icon"
