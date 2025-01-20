@@ -15,7 +15,8 @@
     "migrate": "drizzle-kit migrate",
     "migrate:test": "dotenvx run -f .env.test -- drizzle-kit migrate",
     "migrate:generate": "drizzle-kit generate",
-    "rebuild-timelines": "tsx --env-file-if-exists=.env scripts/rebuild-timelines.ts"
+    "rebuild-timelines": "tsx --env-file-if-exists=.env scripts/rebuild-timelines.ts",
+    "rerender-posts": "tsx --env-file-if-exists=.env scripts/rerender-posts.ts"
   },
   "dependencies": {
     "@aws-sdk/credential-providers": "^3.716.0",

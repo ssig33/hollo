@@ -60,6 +60,7 @@ export function Layout(props: PropsWithChildren<LayoutProps>) {
           href="/public/favicon-white.png"
           media="(prefers-color-scheme: dark)"
         />
+        <style>{`* { font-family: sans-serif !important; text-spacing-trim: space-all !important;}`}</style>
       </head>
       <body>
         <main className="container">{props.children}</main>
