@@ -18,11 +18,11 @@ export function DashboardLayout(
             <li>
               <picture>
                 <source
-                  srcset="https://cdn.jsdelivr.net/gh/dahlia/hollo@main/logo-white.svg"
+                  srcset="https://cdn.jsdelivr.net/gh/fedify-dev/hollo@main/logo-white.svg"
                   media="(prefers-color-scheme: dark)"
                 />
                 <img
-                  src="https://cdn.jsdelivr.net/gh/dahlia/hollo@main/logo-black.svg"
+                  src="https://cdn.jsdelivr.net/gh/fedify-dev/hollo@main/logo-black.svg"
                   width={50}
                   height={50}
                   alt=""

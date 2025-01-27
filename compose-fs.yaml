@@ -1,6 +1,6 @@
 services:
   hollo:
-    image: ghcr.io/dahlia/hollo:canary
+    image: ghcr.io/fedify-dev/hollo:canary
     ports:
       - "3000:3000"
     environment:
