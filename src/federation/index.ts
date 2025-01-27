@@ -650,7 +650,7 @@ federation.setNodeInfoDispatcher("/nodeinfo/2.1", async (_ctx) => {
           version.prerelease == null ? undefined : [...version.prerelease],
       },
       homepage: new URL("https://docs.hollo.social/"),
-      repository: new URL("https://github.com/dahlia/hollo"),
+      repository: new URL("https://github.com/fedify-dev/hollo"),
     },
     protocols: ["activitypub"],
     services: {

@@ -67,7 +67,7 @@ jobs:
           org.opencontainers.image.title=Hollo
           org.opencontainers.image.description=Federated single-user microblogging software
           org.opencontainers.image.url=https://docs.hollo.social/
-          org.opencontainers.image.source=https://github.com/dahlia/hollo
+          org.opencontainers.image.source=https://github.com/fedify-dev/hollo
           org.opencontainers.image.revision=${{ github.sha }}
           org.opencontainers.image.licenses=AGPL-3.0-only
           org.opencontainers.image.version=${{ steps.version.outputs.value }}-dev.${{ github.run_number }}
@@ -93,7 +93,7 @@ jobs:
           org.opencontainers.image.title=Hollo
           org.opencontainers.image.description=Federated single-user microblogging software
           org.opencontainers.image.url=https://docs.hollo.social/
-          org.opencontainers.image.source=https://github.com/dahlia/hollo
+          org.opencontainers.image.source=https://github.com/fedify-dev/hollo
           org.opencontainers.image.revision=${{ github.sha }}
           org.opencontainers.image.licenses=AGPL-3.0-only
           org.opencontainers.image.version=${{ steps.version.outputs.value }}

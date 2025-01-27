@@ -13,10 +13,10 @@ Version 0.3.6
 Released on January 21, 2025.
 
  -  Upgrade Fedify to 1.3.4, which includes [security
-    fixes][@dahlia/fedify#200] [[CVE-2025-23221]]
+    fixes][@fedify-dev/fedify#200] [[CVE-2025-23221]]
 
-[@dahlia/fedify#200]: https://github.com/dahlia/fedify/discussions/200
-[CVE-2025-23221]: https://github.com/dahlia/fedify/security/advisories/GHSA-c59p-wq67-24wx
+[@fedify-dev/fedify#200]: https://github.com/fedify-dev/fedify/discussions/200
+[CVE-2025-23221]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-c59p-wq67-24wx
 
 
 Version 0.3.5
@@ -29,8 +29,8 @@ Released on December 28, 2024.
 
  -  Documented the `TZ` environment variable.  [[#82]]
 
-[#80]: https://github.com/dahlia/hollo/issues/80
-[#82]: https://github.com/dahlia/hollo/issues/82
+[#80]: https://github.com/fedify-dev/hollo/issues/80
+[#82]: https://github.com/fedify-dev/hollo/issues/82
 
 
 Version 0.3.4
@@ -64,8 +64,8 @@ Released on December 18, 2024.
 
  -  Upgrade Fedify to 1.3.2.
 
-[#76]: https://github.com/dahlia/hollo/issues/76
-[#78]: https://github.com/dahlia/hollo/issues/78
+[#76]: https://github.com/fedify-dev/hollo/issues/76
+[#78]: https://github.com/fedify-dev/hollo/issues/78
 
 
 Version 0.3.1
@@ -106,8 +106,8 @@ Released on December 1, 2024.
 
  -  Upgrade Fedify to 1.3.0.
 
-[#40]: https://github.com/dahlia/hollo/issues/40
-[#59]: https://github.com/dahlia/hollo/pull/59
+[#40]: https://github.com/fedify-dev/hollo/issues/40
+[#59]: https://github.com/fedify-dev/hollo/pull/59
 
 
 Version 0.2.4
@@ -138,7 +138,7 @@ Released on November 22, 2024.
 
  -  Upgrade Fedify to 1.2.7.
 
-[#71]: https://github.com/dahlia/hollo/issues/71
+[#71]: https://github.com/fedify-dev/hollo/issues/71
 
 
 Version 0.2.2
@@ -149,7 +149,7 @@ Released on November 7, 2024.
  -  Fixed a bug where replies without mention had not shown up in
     the notifications.  [[#62]]
 
-[#62]: https://github.com/dahlia/hollo/issues/62
+[#62]: https://github.com/fedify-dev/hollo/issues/62
 
 
 Version 0.2.1
@@ -203,11 +203,11 @@ Released on November 3, 2024.
  -  Added `PORT` and `ALLOW_PRIVATE_ADDRESS` environment variables.
     [[#53] by Helge Krueger]
 
-[#38]: https://github.com/dahlia/hollo/issues/38
-[#41]: https://github.com/dahlia/hollo/pull/41
-[#43]: https://github.com/dahlia/hollo/pull/43
-[#47]: https://github.com/dahlia/hollo/pull/47
-[#53]: https://github.com/dahlia/hollo/pull/53
+[#38]: https://github.com/fedify-dev/hollo/issues/38
+[#41]: https://github.com/fedify-dev/hollo/pull/41
+[#43]: https://github.com/fedify-dev/hollo/pull/43
+[#47]: https://github.com/fedify-dev/hollo/pull/47
+[#53]: https://github.com/fedify-dev/hollo/pull/53
 
 
 Version 0.1.7
@@ -219,7 +219,7 @@ Released on November 4, 2024.
     Sharkey, Akkoma) had empty `url` fields, causing them to be displayed
     incorrectly in client apps.  [[#58]]
 
-[#58]: https://github.com/dahlia/hollo/issues/58
+[#58]: https://github.com/fedify-dev/hollo/issues/58
 
 
 Version 0.1.6
@@ -277,7 +277,7 @@ Released on October 24, 2024.
  -  Fixed the last page in the profile using Moshidon leading to infinite
     pagination.  [[#48] by  Emelia Smith]
 
-[#48]: https://github.com/dahlia/hollo/issues/48
+[#48]: https://github.com/fedify-dev/hollo/issues/48
 
 
 Version 0.1.1

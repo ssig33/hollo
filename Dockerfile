@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.title="Hollo"
 LABEL org.opencontainers.image.description="Federated single-user \
 microblogging software"
 LABEL org.opencontainers.image.url="https://docs.hollo.social/"
-LABEL org.opencontainers.image.source="https://github.com/dahlia/hollo"
+LABEL org.opencontainers.image.source="https://github.com/fedify-dev/hollo"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
 
 RUN apk add --no-cache ffmpeg jq libstdc++
