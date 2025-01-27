@@ -17,4 +17,4 @@ draft security advisory][1].
 
 We will review your report and respond within 48 hours.
 
-[1]: https://github.com/dahlia/hollo/security/advisories/new
+[1]: https://github.com/fedify-dev/hollo/security/advisories/new

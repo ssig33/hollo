@@ -17,7 +17,7 @@ export default defineConfig({
         mastodon: "https://hollo.social/@hollo",
         discord: "https://discord.gg/hGXXxUq2jK",
         matrix: "https://matrix.to/#/%23hollo-users:matrix.org",
-        github: "https://github.com/dahlia/hollo",
+        github: "https://github.com/fedify-dev/hollo",
       },
       locales: {
         root: {

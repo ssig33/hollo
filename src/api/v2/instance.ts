@@ -33,7 +33,7 @@ app.get("/", async (c) => {
     domain: url.host,
     title: url.host,
     version: metadata.version,
-    source_url: "https://github.com/dahlia/hollo",
+    source_url: "https://github.com/fedify-dev/hollo",
     description: `A Hollo instance at ${url.host}`,
     usage: {
       users: {
