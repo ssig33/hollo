@@ -1,3 +1,4 @@
+import { getLogger } from "@logtape/logtape";
 import { desc, inArray, isNotNull, ne } from "drizzle-orm";
 import { Hono } from "hono";
 import mime from "mime";
@@ -6,6 +7,8 @@ import db from "../db";
 import { loginRequired } from "../login";
 import { accounts, customEmojis, posts, reactions } from "../schema";
 import { disk, getAssetUrl } from "../storage";
+
+const logger = getLogger(["hollo", "pages", "emojis"]);
 
 const emojis = new Hono();
 
@@ -368,13 +371,16 @@ emojis.post("/import", async (c) => {
       ? (form.get("new")?.toString() ?? "")
       : null;
   const imports = form.getAll("import").map((i) => JSON.parse(i.toString()));
-  await db.insert(customEmojis).values(
-    imports.map(({ shortcode, url }) => ({
-      category,
-      shortcode,
-      url,
-    })),
-  );
+  for (const { shortcode, url } of imports) {
+    try {
+      await db.insert(customEmojis).values({ category, shortcode, url });
+    } catch (error) {
+      logger.error(
+        "Failed to import emoji {shortcode} to {category}: {error}",
+        { category, shortcode, error },
+      );
+    }
+  }
   return c.redirect("/emojis");
 });
 

@@ -16,6 +16,28 @@ To be released.
         now it is forwarded to the followers as well if the activity is signed.
 
 
+Version 0.4.5
+-------------
+
+Released on January 31, 2025.
+
+ -  Fixed a bug where the migration dashboard had not been shown correctly
+    when the aliases of the account contained an actor whose the server was
+    unreachable.  [[#98]]
+
+ -  Fixed a bug where Hollo posts had included unintended extra line breaks
+    on Iceshrimp.  [[#88]]
+
+ -  Fixed a bug where importing emojis from remote servers had failed when
+    some shortcodes were already in use.  [[#102]]
+
+ -  Upgrade Fedify to 1.3.6.
+
+[#88]: https://github.com/fedify-dev/hollo/issues/88
+[#98]: https://github.com/fedify-dev/hollo/issues/98
+[#102]: https://github.com/fedify-dev/hollo/issues/102
+
+
 Version 0.4.4
 -------------
 
