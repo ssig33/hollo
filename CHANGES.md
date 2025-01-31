@@ -13,8 +13,12 @@ To be released.
  -  Fixed a bug where Hollo posts had included unintended extra line breaks
     on Iceshrimp.  [[#88]]
 
+ -  Fixed a bug where importing emojis from remote servers had failed when
+    some shortcodes were already in use.  [[102]]
+
 [#88]: https://github.com/fedify-dev/hollo/issues/88
 [#98]: https://github.com/fedify-dev/hollo/issues/98
+[#102]: https://github.com/fedify-dev/hollo/issues/102
 
 
 Version 0.4.4
