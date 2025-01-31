@@ -7,13 +7,11 @@ import {
   desc,
   eq,
   gt,
-  gte,
   ilike,
   inArray,
   isNotNull,
   isNull,
   lt,
-  lte,
   notInArray,
   or,
   sql,
@@ -57,7 +55,7 @@ import {
 } from "../../schema";
 import { disk, getAssetUrl } from "../../storage";
 import { extractCustomEmojis, formatText } from "../../text";
-import { type Uuid, isUuid, uuid } from "../../uuid";
+import { type Uuid, isUuid } from "../../uuid";
 import { timelineQuerySchema } from "./timelines";
 
 const app = new Hono<{ Variables: Variables }>();
@@ -852,59 +850,6 @@ app.get(
       ),
     });
     return c.json(listList.map(serializeList));
-  },
-);
-
-app.get(
-  "/mutes",
-  tokenRequired,
-  scopeRequired(["read:mutes"]),
-  zValidator(
-    "query",
-    z.object({
-      max_id: uuid.optional(),
-      since_id: uuid.optional(),
-      limit: z
-        .string()
-        .default("40")
-        .transform((v) => {
-          const parsed = Number.parseInt(v);
-          return Math.min(parsed, 80);
-        }),
-    }),
-  ),
-  async (c) => {
-    const owner = c.get("token").accountOwner;
-    if (owner == null) {
-      return c.json(
-        { error: "This method requires an authenticated user" },
-        422,
-      );
-    }
-
-    const muteList = await db.query.mutes.findMany({
-      where: eq(mutes.accountId, owner.id),
-    });
-
-    if (muteList.length < 1) return c.json([]);
-
-    const query = c.req.valid("query");
-
-    const mutedAccounts = await db.query.accounts.findMany({
-      where: and(
-        inArray(
-          accounts.id,
-          muteList.map((m) => m.mutedAccountId),
-        ),
-        query.max_id == null ? undefined : lte(accounts.id, query.max_id),
-        query.since_id == null ? undefined : gte(accounts.id, query.since_id),
-      ),
-      with: { owner: true, successor: true },
-      orderBy: [desc(accounts.id)],
-      limit: query.limit ?? 40,
-    });
-
-    return c.json(mutedAccounts.map((a) => serializeAccount(a, c.req.url)));
   },
 );
 
