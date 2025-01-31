@@ -15,6 +15,12 @@ To be released.
      -  When a `Announce(Note)` or `Undo(Announce(Note))` activity is received,
         now it is forwarded to the followers as well if the activity is signed.
 
+ -  On profile page, images are no more captioned using `<figcaption>` but
+    use only `alt` attribute for accessibility.  [[#99], [#100] by Okuto Oyama]
+
+[#99]: https://github.com/fedify-dev/hollo/issues/99
+[#100]: https://github.com/fedify-dev/hollo/pull/100
+
 
 Version 0.4.5
 -------------

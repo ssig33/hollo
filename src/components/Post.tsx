@@ -215,16 +215,9 @@ function PostContent({ post }: PostContentProps) {
       {post.poll != null && <Poll poll={post.poll} />}
       {post.media.length > 0 && (
         <div>
-          {post.media.map((medium) =>
-            medium.description && medium.description.trim() !== "" ? (
-              <figure>
-                <Medium medium={medium} />
-                <figcaption>{medium.description}</figcaption>
-              </figure>
-            ) : (
-              <Medium medium={medium} />
-            ),
-          )}
+          {post.media.map((medium) => (
+            <Medium medium={medium} />
+          ))}
         </div>
       )}
       {post.quoteTarget != null && (
