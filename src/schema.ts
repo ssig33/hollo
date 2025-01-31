@@ -926,7 +926,7 @@ export const blocks = pgTable(
       .$type<Uuid>()
       .notNull()
       .references(() => accounts.id, { onDelete: "cascade" }),
-    created: timestamp("created", { withTimezone: true })
+    created: timestamp("created", { withTimezone: true, mode: "string" })
       .notNull()
       .default(currentTimestamp),
   },

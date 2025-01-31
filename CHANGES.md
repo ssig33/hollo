@@ -19,6 +19,9 @@ To be released.
     returns a list of accounts that are muted by the authenticated user.
     [[#103]]
 
+ -  Added [`GET /api/v1/blocks`] API to Mastodon comapatiblity layer.  This API
+    returns a list of accounts that are blocked by the authenticated user.
+
  -  On profile page, images are no more captioned using `<figcaption>` but
     use only `alt` attribute for accessibility.  [[#99], [#100] by Okuto Oyama]
 
@@ -26,6 +29,7 @@ To be released.
 [#100]: https://github.com/fedify-dev/hollo/pull/100
 [#103]: https://github.com/fedify-dev/hollo/issues/103
 [`GET /api/v1/mutes`]: https://docs.joinmastodon.org/methods/mutes/#get
+[`GET /api/v1/blocks`]: https://docs.joinmastodon.org/methods/blocks/#get
 
 
 Version 0.4.5
