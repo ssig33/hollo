@@ -16,6 +16,9 @@ import type { Uuid } from "./uuid";
 
 const logger = getLogger(["hollo", "text"]);
 
+// biome-ignore lint/complexity/useLiteralKeys: tsc claims about this
+const ALLOW_HTML = process.env["ALLOW_HTML"]?.trim()?.toLowerCase() === "true";
+
 export interface FormatResult {
   html: string;
   mentions: Uuid[];
@@ -47,7 +50,7 @@ export async function formatText(
   },
 ): Promise<FormatResult> {
   // List all mentions:
-  const draft = new MarkdownIt({ linkify: true })
+  const draft = new MarkdownIt({ linkify: true, html: ALLOW_HTML })
     .use(mention, {})
     .use(hashtag, {});
   const draftEnv: { mentions: string[] } = { mentions: [] };
@@ -95,7 +98,7 @@ export async function formatText(
       : [];
 
   // Render the final HTML:
-  const md = new MarkdownIt({ linkify: true })
+  const md = new MarkdownIt({ linkify: true, html: ALLOW_HTML })
     .use(mention, {
       link(handle) {
         if (handle in handles) return handles[handle].href;

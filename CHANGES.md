@@ -25,6 +25,11 @@ To be released.
  -  On profile page, images are no more captioned using `<figcaption>` but
     use only `alt` attribute for accessibility.  [[#99], [#100] by Okuto Oyama]
 
+ -  Added `ALLOW_HTML` environment variable to allow raw HTML inside Markdown.
+    This is useful for allowing users to use broader formatting options outside
+    of Markdown, but to avoid XSS attacks, it is still limited to a subset of
+    HTML tags and attributes.
+
 [#99]: https://github.com/fedify-dev/hollo/issues/99
 [#100]: https://github.com/fedify-dev/hollo/pull/100
 [#103]: https://github.com/fedify-dev/hollo/issues/103
