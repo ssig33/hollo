@@ -160,7 +160,7 @@ export async function formatText(
     }
   }
   return {
-    html,
+    html: cleanupRedundantWhitespacesInHtml(html),
     mentions: Object.values(handles).map((v) => v.id),
     hashtags: env.hashtags,
     previewLink: env.previewLink,
@@ -169,6 +169,13 @@ export async function formatText(
       customEmojis.map((emoji) => [`:${emoji.shortcode}:`, emoji.url]),
     ),
   };
+}
+
+export function cleanupRedundantWhitespacesInHtml(html: string): string {
+  return html.replaceAll(
+    /(<\/(?:h[123456r]|li|ol|p|pre|ul)?>)\s+(<(?:h[123456r]|li|ol|p|pre|ul)>)/g,
+    (_, a, b) => a + b,
+  );
 }
 
 const HTML_ELEMENT_REGEXP = /<\/?[^>]+>/g;

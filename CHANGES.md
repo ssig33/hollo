@@ -6,10 +6,14 @@ Version 0.4.5
 
 To be released.
 
- -  Fixed the bug where the migration dashboard had not been shown correctly
+ -  Fixed a bug where the migration dashboard had not been shown correctly
     when the aliases of the account contained an actor whose the server was
     unreachable.  [[#98]]
 
+ -  Fixed a bug where Hollo posts had included unintended extra line breaks
+    on Iceshrimp.  [[#88]]
+
+[#88]: https://github.com/fedify-dev/hollo/issues/88
 [#98]: https://github.com/fedify-dev/hollo/issues/98
 
 
