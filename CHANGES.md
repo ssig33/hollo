@@ -6,6 +6,12 @@ Version 0.4.5
 
 To be released.
 
+ -  Fixed the bug where the migration dashboard had not been shown correctly
+    when the aliases of the account contained an actor whose the server was
+    unreachable.  [[#98]]
+
+[#98]: https://github.com/fedify-dev/hollo/issues/98
+
 
 Version 0.4.4
 -------------

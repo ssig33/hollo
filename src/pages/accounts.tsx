@@ -441,10 +441,19 @@ accounts.get("/:id/migrate", async (c) => {
   if (accountOwner == null) return c.notFound();
   const username = `@${accountOwner.handle}`;
   const aliases = await Promise.all(
-    uniq(accountOwner.account.aliases).map(async (alias) => ({
-      iri: alias,
-      handle: await getActorHandle(new URL(alias)),
-    })),
+    uniq(accountOwner.account.aliases).map(async (alias) => {
+      let handle: Awaited<ReturnType<typeof getActorHandle>> | null;
+      try {
+        handle = await getActorHandle(new URL(alias));
+      } catch (e) {
+        if (e instanceof TypeError) {
+          handle = null;
+        } else {
+          throw e;
+        }
+      }
+      return { iri: alias, handle };
+    }),
   );
   const [{ followsCount }] = await db
     .select({ followsCount: count() })
@@ -497,7 +506,15 @@ accounts.get("/:id/migrate", async (c) => {
           <ul>
             {aliases.map(({ iri, handle }) => (
               <li>
-                <tt>{handle}</tt> (<tt>{iri}</tt>)
+                {handle == null ? (
+                  <>
+                    <tt>{iri}</tt> (The server is not available.)
+                  </>
+                ) : (
+                  <>
+                    <tt>{handle}</tt> (<tt>{iri}</tt>)
+                  </>
+                )}
               </li>
             ))}
           </ul>
