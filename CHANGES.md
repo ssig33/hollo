@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.4.5
 -------------
 
-To be released.
+Released on January 31, 2025.
 
  -  Fixed a bug where the migration dashboard had not been shown correctly
     when the aliases of the account contained an actor whose the server was
