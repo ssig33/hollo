@@ -6,6 +6,13 @@ Version 0.4.6
 
 To be released.
 
+ -  Upgrade Fedify to 1.3.7.
+
+ -  Fixed a bug where `LOG_LEVEL` environment variable had not been respected.
+
+ -  Fixed a bug where when `DRIVE_DISK` is set to `fs` and `FS_ASSET_PATH` is
+    set to a relative path, Hollo server had failed to start.
+
 
 Version 0.4.5
 -------------

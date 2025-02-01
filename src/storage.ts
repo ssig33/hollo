@@ -85,7 +85,7 @@ switch (DRIVE_DISK) {
       location: isAbsolute(assetPath)
         ? assetPath
         : // @ts-ignore: Don't know why, but TS can't find ImportMeta.dir on CI
-          join(dirname(import.meta.dir), assetPath),
+          join(dirname(import.meta.dirname), assetPath),
       visibility: "public",
     });
     break;

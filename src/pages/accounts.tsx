@@ -354,7 +354,7 @@ accounts.post("/:id", async (c) => {
       .where(eq(accountOwners.id, accountId));
   });
   await fedCtx.sendActivity(
-    { handle: accountOwner.handle },
+    { username: accountOwner.handle },
     "followers",
     new Update({
       actor: fedCtx.getActorUri(accountOwner.handle),
@@ -399,7 +399,7 @@ accounts.post("/:id/delete", async (c) => {
     object: await fedCtx.getActor(accountOwner.handle),
   });
   await fedCtx.sendActivity(
-    { handle: accountOwner.handle },
+    { username: accountOwner.handle },
     "followers",
     activity,
     { preferSharedInbox: true, excludeBaseUris: [fedCtx.url] },
@@ -409,7 +409,7 @@ accounts.post("/:id/delete", async (c) => {
     where: eq(follows.followerId, accountId),
   });
   await fedCtx.sendActivity(
-    { handle: accountOwner.handle },
+    { username: accountOwner.handle },
     following.map(
       (f) =>
         ({

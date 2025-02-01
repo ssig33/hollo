@@ -109,7 +109,7 @@ app.post(
 
     // Finally send the Flag activity to the targetAccount's server:
     await fedCtx.sendActivity(
-      { handle: accountOwner.handle },
+      { username: accountOwner.handle },
       {
         id: new URL(targetAccount.iri),
         inboxId: new URL(targetAccount.inboxUrl),
