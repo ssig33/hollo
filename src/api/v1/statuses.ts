@@ -412,7 +412,7 @@ app.delete(
     const fedCtx = federation.createContext(c.req.raw, undefined);
     const activity = toDelete(post, fedCtx);
     await fedCtx.sendActivity(
-      { handle: owner.handle },
+      { username: owner.handle },
       getRecipients(post),
       activity,
       {
@@ -421,7 +421,7 @@ app.delete(
     );
     if (post.visibility !== "direct") {
       await fedCtx.sendActivity(
-        { handle: owner.handle },
+        { username: owner.handle },
         "followers",
         activity,
         {
@@ -609,7 +609,7 @@ app.post(
     }
     const fedCtx = federation.createContext(c.req.raw, undefined);
     await fedCtx.sendActivity(
-      { handle: owner.handle },
+      { username: owner.handle },
       {
         id: new URL(post.account.iri),
         inboxId: new URL(post.account.inboxUrl),
@@ -657,7 +657,7 @@ app.post(
     }
     const fedCtx = federation.createContext(c.req.raw, undefined);
     await fedCtx.sendActivity(
-      { handle: owner.handle },
+      { username: owner.handle },
       {
         id: new URL(post.account.iri),
         inboxId: new URL(post.account.inboxUrl),
@@ -794,7 +794,7 @@ app.post(
       with: getPostRelations(owner.id),
     });
     await fedCtx.sendActivity(
-      { handle: owner.handle },
+      { username: owner.handle },
       "followers",
       toAnnounce(post!, fedCtx),
       {
@@ -849,7 +849,7 @@ app.post(
     const fedCtx = federation.createContext(c.req.raw, undefined);
     for (const post of postList) {
       await fedCtx.sendActivity(
-        { handle: owner.handle },
+        { username: owner.handle },
         "followers",
         new Undo({
           actor: new URL(owner.account.iri),

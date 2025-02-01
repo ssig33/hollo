@@ -226,7 +226,7 @@ app.patch(
       .where(eq(accountOwners.id, owner.id))
       .returning();
     await fedCtx.sendActivity(
-      { handle: updatedOwners[0].handle },
+      { username: updatedOwners[0].handle },
       "followers",
       new vocab.Update({
         actor: fedCtx.getActorUri(updatedOwners[0].handle),

@@ -39,11 +39,6 @@ await configure({
       sinks: ["console", "file"],
     },
     {
-      category: ["fedify", "runtime", "docloader"],
-      lowestLevel: "warning",
-      sinks: ["console", "file"],
-    },
-    {
       category: "hollo",
       lowestLevel: LOG_LEVEL,
       sinks: ["console", "file"],
