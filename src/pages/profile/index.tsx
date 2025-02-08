@@ -1,4 +1,4 @@
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, count, desc, eq, or } from "drizzle-orm";
 import { Hono } from "hono";
 import xss from "xss";
 import { Layout } from "../../components/Layout.tsx";
@@ -50,13 +50,16 @@ profile.get<"/:handle">(async (c) => {
     pageStr !== undefined && !Number.isNaN(Number.parseInt(pageStr))
       ? Number.parseInt(pageStr)
       : 1;
-  const totalPosts = await db.query.posts.findMany({
-    where: and(
-      eq(posts.accountId, owner.id),
-      or(eq(posts.visibility, "public"), eq(posts.visibility, "unlisted")),
-    ),
-  });
-  const maxPage = Math.ceil(totalPosts.length / PAGE_SIZE);
+  const [{ totalPosts }] = await db
+    .select({ totalPosts: count() })
+    .from(posts)
+    .where(
+      and(
+        eq(posts.accountId, owner.id),
+        or(eq(posts.visibility, "public"), eq(posts.visibility, "unlisted")),
+      ),
+    );
+  const maxPage = Math.ceil(totalPosts / PAGE_SIZE);
   if (page > maxPage) {
     return c.notFound();
   }
