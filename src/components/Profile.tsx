@@ -52,25 +52,27 @@ export function Profile({ accountOwner }: ProfileProps) {
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: no xss */}
       <div dangerouslySetInnerHTML={{ __html: bioHtml }} />
       {account.fieldHtmls && (
-        <table>
-          <thead>
-            <tr>
-              {Object.keys(account.fieldHtmls).map((key) => (
-                <th>{key}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              {Object.values(account.fieldHtmls).map((value) => (
-                <td
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: no xss
-                  dangerouslySetInnerHTML={{ __html: value }}
-                />
-              ))}
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-auto">
+          <table>
+            <thead>
+              <tr>
+                {Object.keys(account.fieldHtmls).map((key) => (
+                  <th>{key}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                {Object.values(account.fieldHtmls).map((value) => (
+                  <td
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: no xss
+                    dangerouslySetInnerHTML={{ __html: value }}
+                  />
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
