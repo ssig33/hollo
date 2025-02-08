@@ -1,4 +1,4 @@
-import { and, desc, eq, lte, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { Hono } from "hono";
 import xss from "xss";
 import { Layout } from "../../components/Layout.tsx";
@@ -26,7 +26,7 @@ const profile = new Hono();
 
 profile.route("/:id{[-a-f0-9]+}", profilePost);
 
-const WINDOW = 30;
+const PAGE_SIZE = 30;
 
 profile.get<"/:handle">(async (c) => {
   let handle = c.req.param("handle");
@@ -39,14 +39,35 @@ profile.get<"/:handle">(async (c) => {
   const contStr = c.req.query("cont");
   const cont = contStr == null || contStr.trim() === "" ? undefined : contStr;
   if (cont != null && !isUuid(cont)) return c.notFound();
+  const pageStr = c.req.query("page");
+  if (
+    pageStr !== undefined &&
+    (Number.isNaN(Number.parseInt(pageStr)) || Number.parseInt(pageStr) < 1)
+  ) {
+    return c.notFound();
+  }
+  const page =
+    pageStr !== undefined && !Number.isNaN(Number.parseInt(pageStr))
+      ? Number.parseInt(pageStr)
+      : 1;
+  const totalPosts = await db.query.posts.findMany({
+    where: and(
+      eq(posts.accountId, owner.id),
+      or(eq(posts.visibility, "public"), eq(posts.visibility, "unlisted")),
+    ),
+  });
+  const maxPage = Math.ceil(totalPosts.length / PAGE_SIZE);
+  if (page > maxPage) {
+    return c.notFound();
+  }
   const postList = await db.query.posts.findMany({
     where: and(
       eq(posts.accountId, owner.id),
       or(eq(posts.visibility, "public"), eq(posts.visibility, "unlisted")),
-      ...(cont == null ? [] : [lte(posts.id, cont)]),
     ),
     orderBy: desc(posts.id),
-    limit: WINDOW + 1,
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
     with: {
       account: true,
       media: true,
@@ -133,12 +154,13 @@ profile.get<"/:handle">(async (c) => {
   const atomUrl = new URL(c.req.url);
   atomUrl.pathname += "/atom.xml";
   atomUrl.search = "";
+  const newerUrl = page > 1 ? `?page=${page - 1}` : undefined;
   const olderUrl =
-    postList.length > WINDOW ? `?cont=${postList[WINDOW].id}` : undefined;
+    postList.length === PAGE_SIZE ? `?page=${page + 1}` : undefined;
   return c.html(
     <ProfilePage
       accountOwner={owner}
-      posts={postList.slice(0, WINDOW)}
+      posts={postList.slice(0, PAGE_SIZE)}
       pinnedPosts={pinnedPostList
         .map((p) => p.post)
         .filter(
@@ -147,6 +169,7 @@ profile.get<"/:handle">(async (c) => {
       featuredTags={featuredTagList}
       atomUrl={atomUrl.href}
       olderUrl={olderUrl}
+      newerUrl={newerUrl}
     />,
   );
 });
@@ -224,6 +247,7 @@ interface ProfilePageProps {
   readonly featuredTags: FeaturedTag[];
   readonly atomUrl: string;
   readonly olderUrl?: string;
+  readonly newerUrl?: string;
 }
 
 function ProfilePage({
@@ -233,6 +257,7 @@ function ProfilePage({
   featuredTags,
   atomUrl,
   olderUrl,
+  newerUrl,
 }: ProfilePageProps) {
   return (
     <Layout
@@ -267,8 +292,9 @@ function ProfilePage({
       {posts.map((post) => (
         <PostView post={post} />
       ))}
-      <div style="text-align: right;">
-        {olderUrl && <a href={olderUrl}>Older &rarr;</a>}
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div>{newerUrl && <a href={newerUrl}>&larr; Newer</a>}</div>
+        <div>{olderUrl && <a href={olderUrl}>Older &rarr;</a>}</div>
       </div>
     </Layout>
   );
