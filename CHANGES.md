@@ -28,6 +28,10 @@ To be released.
  -  On profile page, images are no more captioned using `<figcaption>` but
     use only `alt` attribute for accessibility.  [[#99], [#100] by Okuto Oyama]
 
+ -  Fixed a style bug where horizontal scrolling occurred when the screen
+    size was reduced when there were many custom fields on profile page.
+    [[#106] by Okuto Oyama]
+
  -  Added `ALLOW_HTML` environment variable to allow raw HTML inside Markdown.
     This is useful for allowing users to use broader formatting options outside
     of Markdown, but to avoid XSS attacks, it is still limited to a subset of
@@ -38,6 +42,7 @@ To be released.
 [#103]: https://github.com/fedify-dev/hollo/issues/103
 [#104]: https://github.com/fedify-dev/hollo/issues/104
 [#105]: https://github.com/fedify-dev/hollo/pull/105
+[#106]: https://github.com/fedify-dev/hollo/pull/106
 [`GET /api/v1/mutes`]: https://docs.joinmastodon.org/methods/mutes/#get
 [`GET /api/v1/blocks`]: https://docs.joinmastodon.org/methods/blocks/#get
 
