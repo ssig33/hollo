@@ -22,6 +22,9 @@ To be released.
  -  Added [`GET /api/v1/blocks`] API to Mastodon comapatiblity layer.  This API
     returns a list of accounts that are blocked by the authenticated user.
 
+ -  On profile page, backward pagination (newer posts) is now available.
+    [[#104], [#105] by Okuto Oyama]
+
  -  On profile page, images are no more captioned using `<figcaption>` but
     use only `alt` attribute for accessibility.  [[#99], [#100] by Okuto Oyama]
 
@@ -37,6 +40,8 @@ To be released.
 [#99]: https://github.com/fedify-dev/hollo/issues/99
 [#100]: https://github.com/fedify-dev/hollo/pull/100
 [#103]: https://github.com/fedify-dev/hollo/issues/103
+[#104]: https://github.com/fedify-dev/hollo/issues/104
+[#105]: https://github.com/fedify-dev/hollo/pull/105
 [#106]: https://github.com/fedify-dev/hollo/pull/106
 [`GET /api/v1/mutes`]: https://docs.joinmastodon.org/methods/mutes/#get
 [`GET /api/v1/blocks`]: https://docs.joinmastodon.org/methods/blocks/#get
