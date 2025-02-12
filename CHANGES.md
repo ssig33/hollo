@@ -37,8 +37,12 @@ To be released.
     of Markdown, but to avoid XSS attacks, it is still limited to a subset of
     HTML tags and attributes.
 
+ -  On profile page, the favicon is now switched between light and dark mode
+    according to the user's preference.  [[#101]]
+
 [#99]: https://github.com/fedify-dev/hollo/issues/99
 [#100]: https://github.com/fedify-dev/hollo/pull/100
+[#101]: https://github.com/fedify-dev/hollo/issues/101
 [#103]: https://github.com/fedify-dev/hollo/issues/103
 [#104]: https://github.com/fedify-dev/hollo/issues/104
 [#105]: https://github.com/fedify-dev/hollo/pull/105

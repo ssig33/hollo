@@ -46,6 +46,14 @@ export function Layout(props: PropsWithChildren<LayoutProps>) {
           type="image/png"
           sizes="500x500"
           href="/public/favicon.png"
+          media="(prefers-color-scheme: light)"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="500x500"
+          href="/public/favicon-white.png"
+          media="(prefers-color-scheme: dark)"
         />
       </head>
       <body>
