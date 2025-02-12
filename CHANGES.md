@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.5.0
 -------------
 
-To be released.
+Released on February 12, 2025.
 
  -  The number of shares and likes became more accurate.
 
@@ -21,6 +21,7 @@ To be released.
 
  -  Added [`GET /api/v1/blocks`] API to Mastodon comapatiblity layer.  This API
     returns a list of accounts that are blocked by the authenticated user.
+    [[#103]]
 
  -  On profile page, backward pagination (newer posts) is now available.
     [[#104], [#105] by Okuto Oyama]
