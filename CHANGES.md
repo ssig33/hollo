@@ -40,6 +40,10 @@ To be released.
  -  On profile page, the favicon is now switched between light and dark mode
     according to the user's preference.  [[#101]]
 
+ -  The `S3_REGION` environment variable became required if `DRIVE_DISK` is set
+    to `s3`.  [[#95]]
+
+[#95]: https://github.com/fedify-dev/hollo/issues/95
 [#99]: https://github.com/fedify-dev/hollo/issues/99
 [#100]: https://github.com/fedify-dev/hollo/pull/100
 [#101]: https://github.com/fedify-dev/hollo/issues/101

@@ -91,15 +91,17 @@ switch (DRIVE_DISK) {
     break;
   case "s3":
     if (bucket == null) throw new Error("S3_BUCKET is required");
+    if (region == null) throw new Error("S3_REGION is required");
     if (accessKeyId == null) throw new Error("AWS_ACCESS_KEY_ID is required");
-    if (secretAccessKey == null)
+    if (secretAccessKey == null) {
       throw new Error("AWS_SECRET_ACCESS_KEY is required");
+    }
 
     driver = new S3Driver({
       credentials: fromEnv(),
-      region: region == null || region === "" ? "auto" : region,
+      region,
       endpoint: endpointUrl,
-      bucket: bucket,
+      bucket,
       // biome-ignore lint/complexity/useLiteralKeys: tsc complains about this (TS4111)
       forcePathStyle: process.env["S3_FORCE_PATH_STYLE"] === "true",
       visibility: "public",
