@@ -6,6 +6,9 @@ Version 0.3.7
 
 To be released.
 
+ -  Fixed a bug where `GET /api/v1/accounts/:id/statuses` had tried to fetch
+    remote posts for local accounts.  [[#107]]
+
 
 Version 0.3.6
 -------------
