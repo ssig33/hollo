@@ -6,6 +6,9 @@ Version 0.5.1
 
 To be released.
 
+ -  Fixed a bug where `GET /api/v1/accounts/:id/statuses` had tried to fetch
+    remote posts for local accounts.  [[#107]]
+
 
 Version 0.5.0
 -------------
@@ -60,6 +63,16 @@ Released on February 12, 2025.
 [#106]: https://github.com/fedify-dev/hollo/pull/106
 [`GET /api/v1/mutes`]: https://docs.joinmastodon.org/methods/mutes/#get
 [`GET /api/v1/blocks`]: https://docs.joinmastodon.org/methods/blocks/#get
+
+
+Version 0.4.7
+-------------
+
+Released on February 14, 2025.
+
+ -  Fixed a bug where `GET /api/v1/accounts/:id/statuses` had tried to fetch
+    remote posts for local accounts.  [[#107]]
+ -  Upgrade Fedify to 1.3.8.
 
 
 Version 0.4.6
@@ -179,6 +192,18 @@ Released on December 30, 2024.
 
 [`discoverable`]: https://docs.joinmastodon.org/spec/activitypub/#discoverable
 [#65]: https://github.com/fedify-dev/hollo/issues/65
+
+
+Version 0.3.7
+-------------
+
+Released on February 14, 2025.
+
+ -  Fixed a bug where `GET /api/v1/accounts/:id/statuses` had tried to fetch
+    remote posts for local accounts.  [[#107]]
+ -  Upgrade Fedify to 1.3.8.
+
+[#107]: https://github.com/fedify-dev/hollo/issues/107
 
 
 Version 0.3.6
