@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.5.1
 -------------
 
-To be released.
+Released on February 14, 2025.
 
  -  Fixed a bug where `GET /api/v1/accounts/:id/statuses` had tried to fetch
     remote posts for local accounts.  [[#107]]
