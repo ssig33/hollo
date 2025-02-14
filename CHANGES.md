@@ -8,6 +8,7 @@ To be released.
 
  -  Fixed a bug where `GET /api/v1/accounts/:id/statuses` had tried to fetch
     remote posts for local accounts.  [[#107]]
+ -  Upgrade Fedify to 1.3.8.
 
 
 Version 0.3.6
