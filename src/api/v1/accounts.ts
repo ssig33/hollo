@@ -546,7 +546,7 @@ app.get(
       .select({ cnt: count() })
       .from(posts)
       .where(eq(posts.accountId, account.id));
-    if (cnt < REMOTE_ACTOR_FETCH_POSTS) {
+    if (account.owner == null && cnt < REMOTE_ACTOR_FETCH_POSTS) {
       const fedCtx = federation.createContext(c.req.raw, undefined);
       await persistAccountPosts(
         db,
