@@ -213,13 +213,20 @@ function PostContent({ post }: PostContentProps) {
         />
       )}
       {post.poll != null && <Poll poll={post.poll} />}
-      {post.media.length > 0 && (
+      {post.media.map((medium) => (
         <div>
-          {post.media.map((medium) => (
-            <Medium medium={medium} />
-          ))}
+          <Medium medium={medium} />
+          {medium.description && medium.description.trim() !== "" && (
+            <>
+              <hr />
+              <details>
+                <summary>ALT text details</summary>
+                {medium.description}
+              </details>
+            </>
+          )}
         </div>
-      )}
+      ))}
       {post.quoteTarget != null && (
         <Post
           post={{ ...post.quoteTarget, sharing: null, quoteTarget: null }}
