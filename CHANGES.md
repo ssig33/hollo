@@ -6,6 +6,9 @@ Version 0.6.0
 
 To be released.
 
+ -  On profile page, alt texts for images are now expanded within `<details>`.
+    [[#99], [#110] by Okuto Oyama]
+
 
 Version 0.5.1
 -------------
