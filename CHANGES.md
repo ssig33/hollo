@@ -6,6 +6,17 @@ Version 0.5.2
 
 To be released.
 
+-  Fixed a bug where the `follows.follower_id` column had not referenced the
+    `accounts.id` column.  [[#112]]
+
+ -  Fixed a bug where `GET /api/v1/notifications` had returned server errors
+    with some filters.  [[#113]]
+
+ -  Fixed a bug where the federation dashboard had not shown due to server
+    errors when an instance had just been set up.
+
+ -  Upgrade Fedify to 1.4.2.
+
 
 Version 0.5.1
 -------------
@@ -69,6 +80,26 @@ Released on February 12, 2025.
 [#106]: https://github.com/fedify-dev/hollo/pull/106
 [`GET /api/v1/mutes`]: https://docs.joinmastodon.org/methods/mutes/#get
 [`GET /api/v1/blocks`]: https://docs.joinmastodon.org/methods/blocks/#get
+
+
+Version 0.4.8
+-------------
+
+Released on February 20, 2025.
+
+ -  Fixed a bug where the `follows.follower_id` column had not referenced the
+    `accounts.id` column.  [[#112]]
+
+ -  Fixed a bug where `GET /api/v1/notifications` had returned server errors
+    with some filters.  [[#113]]
+
+ -  Fixed a bug where the federation dashboard had not shown due to server
+    errors when an instance had just been set up.
+
+ -  Upgrade Fedify to 1.3.9.
+
+[#112]: https://github.com/fedify-dev/hollo/issues/112
+[#113]: https://github.com/fedify-dev/hollo/issues/113
 
 
 Version 0.4.7

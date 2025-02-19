@@ -16,14 +16,19 @@ data.get("/", async (c) => {
   const done = c.req.query("done");
   const error = c.req.query("error");
 
-  const queueMessages = await db
-    .select({
-      type: sql`fedify_message_v2.message ->> 'type'`,
-      number: count(),
-    })
-    .from(sql`fedify_message_v2`)
-    .groupBy(sql`fedify_message_v2.message ->> 'type'`)
-    .execute();
+  let queueMessages: { type: string; number: number }[];
+  try {
+    queueMessages = await db
+      .select({
+        type: sql<string>`fedify_message_v2.message ->> 'type'`,
+        number: count(),
+      })
+      .from(sql`fedify_message_v2`)
+      .groupBy(sql`fedify_message_v2.message ->> 'type'`)
+      .execute();
+  } catch {
+    queueMessages = [];
+  }
 
   return c.html(
     <DashboardLayout title="Hollo: Federation" selectedMenu="federation">
