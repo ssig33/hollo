@@ -6,6 +6,9 @@ Version 0.4.8
 
 To be released.
 
+ -  Fixed a bug where the federation dashboard had not shown due to server
+    errors when an instance had just been set up.
+
  -  Upgrade Fedify to 1.3.9.
 
 
