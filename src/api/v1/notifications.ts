@@ -96,7 +96,7 @@ app.get(
           type: sql<NotificationType>`'mention'`,
           created: sql<Date>`coalesce(${posts.published}, ${posts.updated})`,
           accountId: posts.accountId,
-          postId: sql<string | null>`${posts.id}`,
+          postId: sql<Uuid | null>`${posts.id}`,
           emoji: sql<string | null>`null`,
           customEmoji: sql<string | null>`null`,
         })
@@ -163,7 +163,7 @@ app.get(
           type: sql<NotificationType>`'reblog'`,
           created: sql<Date>`coalesce(${posts.published}, ${posts.updated})`,
           accountId: posts.accountId,
-          postId: sql<string | null>`${sharingPosts.id}`,
+          postId: sql<Uuid | null>`${sharingPosts.id}`,
           emoji: sql<string | null>`null`,
           customEmoji: sql<string | null>`null`,
         })
@@ -216,7 +216,7 @@ app.get(
           type: sql<NotificationType>`'follow'`,
           created: sql<Date>`${follows.approved}`,
           accountId: follows.followerId,
-          postId: sql<string | null>`null`,
+          postId: sql<Uuid | null>`null::uuid`,
           emoji: sql<string | null>`null`,
           customEmoji: sql<string | null>`null`,
         })
@@ -268,7 +268,7 @@ app.get(
           type: sql<NotificationType>`'follow_request'`,
           created: follows.created,
           accountId: follows.followerId,
-          postId: sql<string | null>`null`,
+          postId: sql<Uuid | null>`null::uuid`,
           emoji: sql<string | null>`null`,
           customEmoji: sql<string | null>`null`,
         })
@@ -320,7 +320,7 @@ app.get(
           type: sql<NotificationType>`'favourite'`,
           created: likes.created,
           accountId: likes.accountId,
-          postId: sql<string | null>`${likes.postId}`,
+          postId: sql<Uuid | null>`${likes.postId}`,
           emoji: sql<string | null>`null`,
           customEmoji: sql<string | null>`null`,
         })
@@ -373,7 +373,7 @@ app.get(
           type: sql<NotificationType>`'emoji_reaction'`,
           created: reactions.created,
           accountId: reactions.accountId,
-          postId: sql<string | null>`${reactions.postId}`,
+          postId: sql<Uuid | null>`${reactions.postId}`,
           emoji: sql<string | null>`${reactions.emoji}`,
           customEmoji: sql<string | null>`${reactions.customEmoji}`,
         })
@@ -505,8 +505,8 @@ app.get(
         id: sql<string>`q.id`,
         type: sql<NotificationType>`q."type"`,
         created: sql<Date>`q.created`,
-        accountId: sql<string>`q.accountId`,
-        postId: sql<string | null>`q.postId`,
+        accountId: sql<Uuid>`q.accountId`,
+        postId: sql<Uuid | null>`q.postId`,
         emoji: sql<string | null>`q.emoji`,
         customEmoji: sql<string | null>`q.customEmoji`,
       })
