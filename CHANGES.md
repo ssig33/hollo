@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.4.8
 -------------
 
-To be released.
+Released on February 20, 2025.
 
  -  Fixed a bug where the `follows.follower_id` column had not referenced the
     `accounts.id` column.  [[#112]]
