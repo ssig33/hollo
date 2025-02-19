@@ -6,10 +6,15 @@ Version 0.4.8
 
 To be released.
 
+ -  Fixed a bug where the `follows.follower_id` column had not referenced the
+    `accounts.id` column.  [[#112]]
+
  -  Fixed a bug where the federation dashboard had not shown due to server
     errors when an instance had just been set up.
 
  -  Upgrade Fedify to 1.3.9.
+
+[#112]: https://github.com/fedify-dev/hollo/issues/112
 
 
 Version 0.4.7
