@@ -10,11 +10,15 @@ To be released.
     available theme colors can be found in the [*Colors* section] of the Pico
     CSS docs.
 
+ -  On profile page, shared posts are now more visually separated from the
+    original posts, and the time of sharing is now shown.  [[#111]]
+
  -  On profile page, alt texts for images are now expanded within `<details>`.
     [[#99], [#110] by Okuto Oyama]
 
 [*Colors* section]: https://picocss.com/docs/colors
 [#110]: https://github.com/fedify-dev/hollo/pull/110
+[#111]: https://github.com/fedify-dev/hollo/issues/111
 
 
 Version 0.5.2

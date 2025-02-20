@@ -43,13 +43,19 @@ export interface PostProps {
       | null;
     reactions: Reaction[];
   };
+  readonly shared?: Date;
   readonly pinned?: boolean;
   readonly quoted?: boolean;
 }
 
-export function Post({ post, pinned, quoted }: PostProps) {
+export function Post({ post, shared, pinned, quoted }: PostProps) {
   if (post.sharing != null)
-    return <Post post={{ ...post.sharing, sharing: null }} />;
+    return (
+      <Post
+        post={{ ...post.sharing, sharing: null }}
+        shared={post.published ?? undefined}
+      />
+    );
   const account = post.account;
   const authorNameHtml = renderCustomEmojis(account.name, account.emojis);
   const authorUrl = account.url ?? account.iri;
@@ -110,10 +116,26 @@ export function Post({ post, pinned, quoted }: PostProps) {
       )}
       <footer>
         <p>
+          {shared != null && (
+            <small>
+              Shared at{" "}
+              <time dateTime={shared.toISOString()}>
+                {shared.toLocaleString("en", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </time>{" "}
+              &middot;{" "}
+            </small>
+          )}
           <a href={post.url ?? post.iri}>
             <small>
+              Published at{" "}
               <time dateTime={(post.published ?? post.updated).toISOString()}>
-                {(post.published ?? post.updated).toLocaleString()}
+                {(post.published ?? post.updated).toLocaleString("en", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
               </time>
             </small>
           </a>
