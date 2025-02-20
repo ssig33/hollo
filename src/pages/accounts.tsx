@@ -43,6 +43,7 @@ import {
   type AccountOwner,
   type Post,
   type PostVisibility,
+  type ThemeColor,
   accountOwners,
   accounts as accountsTable,
   blocks,
@@ -83,6 +84,7 @@ accounts.post("/", async (c) => {
     .get("visibility")
     ?.toString()
     ?.trim() as PostVisibility;
+  const themeColor = form.get("themeColor")?.toString()?.trim() as ThemeColor;
   const news = form.get("news") != null;
   if (username == null || username === "" || name == null || name === "") {
     return c.html(
@@ -95,6 +97,7 @@ accounts.post("/", async (c) => {
           discoverable,
           language,
           visibility,
+          themeColor,
           news,
         }}
         errors={{
@@ -159,6 +162,7 @@ accounts.post("/", async (c) => {
         bio: bio ?? "",
         language: language ?? "en",
         visibility: visibility ?? "public",
+        themeColor,
         discoverable,
       })
       .returning();
@@ -216,7 +220,7 @@ function AccountListPage({ accountOwners }: AccountListPageProps) {
 accounts.get("/new", (c) => {
   return c.html(
     <NewAccountPage
-      values={{ language: "en", news: true }}
+      values={{ language: "en", themeColor: "azure", news: true }}
       officialAccount={HOLLO_OFFICIAL_ACCOUNT}
     />,
   );
@@ -259,7 +263,11 @@ interface AccountPageProps extends NewAccountPageProps {
 function AccountPage(props: AccountPageProps) {
   const username = `@${props.accountOwner.handle}`;
   return (
-    <DashboardLayout title={`Hollo: Edit ${username}`} selectedMenu="accounts">
+    <DashboardLayout
+      title={`Hollo: Edit ${username}`}
+      selectedMenu="accounts"
+      themeColor={props.accountOwner.themeColor}
+    >
       <hgroup>
         <h1>Edit {username}</h1>
         <p>You can edit your account by filling out the form below.</p>
@@ -277,6 +285,7 @@ function AccountPage(props: AccountPageProps) {
             props.values?.discoverable ?? props.accountOwner.discoverable,
           language: props.values?.language ?? props.accountOwner.language,
           visibility: props.values?.visibility ?? props.accountOwner.visibility,
+          themeColor: props.values?.themeColor ?? props.accountOwner.themeColor,
           news: props.values?.news ?? props.news,
         }}
         errors={props.errors}
@@ -305,6 +314,7 @@ accounts.post("/:id", async (c) => {
     .get("visibility")
     ?.toString()
     ?.trim() as PostVisibility;
+  const themeColor = form.get("themeColor")?.toString()?.trim() as ThemeColor;
   const news = form.get("news") != null;
   if (name == null || name === "") {
     return c.html(
@@ -317,6 +327,7 @@ accounts.post("/:id", async (c) => {
           protected: protected_,
           language,
           visibility,
+          themeColor,
           news,
         }}
         errors={{
@@ -350,7 +361,7 @@ accounts.post("/:id", async (c) => {
       .where(eq(accountsTable.id, accountId));
     await tx
       .update(accountOwners)
-      .set({ bio, language, visibility, discoverable })
+      .set({ bio, language, visibility, themeColor, discoverable })
       .where(eq(accountOwners.id, accountId));
   });
   await fedCtx.sendActivity(

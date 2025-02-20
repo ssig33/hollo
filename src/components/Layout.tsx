@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "hono/jsx";
+import type { ThemeColor } from "../schema";
 
 export interface LayoutProps {
   title: string;
@@ -7,9 +8,11 @@ export interface LayoutProps {
   description?: string | null;
   imageUrl?: string | null;
   links?: { href: string | URL; rel: string; type?: string }[];
+  themeColor?: ThemeColor;
 }
 
 export function Layout(props: PropsWithChildren<LayoutProps>) {
+  const themeColor = props.themeColor ?? "azure";
   return (
     <html lang="en">
       <head>
@@ -39,7 +42,7 @@ export function Layout(props: PropsWithChildren<LayoutProps>) {
             type={link.type}
           />
         ))}
-        <link rel="stylesheet" href="/public/pico.min.css" />
+        <link rel="stylesheet" href={`/public/pico.${themeColor}.min.css`} />
         <link rel="stylesheet" href="/public/pico.colors.min.css" />
         <link
           rel="icon"

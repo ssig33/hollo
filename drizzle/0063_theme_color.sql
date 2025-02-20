@@ -1,0 +1,3 @@
+CREATE TYPE "public"."theme_color" AS ENUM('amber', 'azure', 'blue', 'cyan', 'fuchsia', 'green', 'grey', 'indigo', 'jade', 'lime', 'orange', 'pink', 'pumpkin', 'purple', 'red', 'sand', 'slate', 'violet', 'yellow', 'zinc');--> statement-breakpoint
+ALTER TABLE "account_owners" ADD COLUMN "theme_color" "theme_color" NOT NULL DEFAULT 'azure';--> statement-breakpoint
+ALTER TABLE "account_owners" ALTER COLUMN "theme_color" DROP DEFAULT;

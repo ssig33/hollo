@@ -5,6 +5,7 @@ import { Post as PostView } from "../../components/Post.tsx";
 import db from "../../db.ts";
 import {
   type Account,
+  type AccountOwner,
   type Medium,
   type Poll,
   type PollOption,
@@ -22,15 +23,13 @@ profilePost.get<"/:handle{@[^/]+}/:id{[-a-f0-9]+}">(async (c) => {
   const postId = c.req.param("id");
   if (!isUuid(postId)) return c.notFound();
   if (handle.startsWith("@")) handle = handle.substring(1);
+  const accountOwner = await db.query.accountOwners.findFirst({
+    where: eq(accountOwners.handle, handle),
+  });
+  if (accountOwner == null) return c.notFound();
   const post = await db.query.posts.findFirst({
     where: and(
-      eq(
-        posts.accountId,
-        db
-          .select({ id: accountOwners.id })
-          .from(accountOwners)
-          .where(eq(accountOwners.handle, handle)),
-      ),
+      eq(posts.accountId, accountOwner.id),
       eq(posts.id, postId),
       or(eq(posts.visibility, "public"), eq(posts.visibility, "unlisted")),
     ),
@@ -106,10 +105,11 @@ profilePost.get<"/:handle{@[^/]+}/:id{[-a-f0-9]+}">(async (c) => {
     },
   });
   if (post == null) return c.notFound();
-  return c.html(<PostPage post={post} />);
+  return c.html(<PostPage post={post} accountOwner={accountOwner} />);
 });
 
 interface PostPageProps {
+  readonly accountOwner: AccountOwner;
   readonly post: Post & {
     account: Account;
     media: Medium[];
@@ -180,7 +180,7 @@ interface PostPageProps {
   };
 }
 
-function PostPage({ post }: PostPageProps) {
+function PostPage({ post, accountOwner }: PostPageProps) {
   const summary =
     post.summary ??
     ((post.content ?? "").length > 30
@@ -193,6 +193,7 @@ function PostPage({ post }: PostPageProps) {
       description={post.summary ?? post.content}
       imageUrl={post.account.avatarUrl}
       url={post.url ?? post.iri}
+      themeColor={accountOwner.themeColor}
     >
       <PostView post={post} />
       {post.replies.map((reply) => (

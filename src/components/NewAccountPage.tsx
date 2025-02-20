@@ -1,4 +1,4 @@
-import type { PostVisibility } from "../schema.ts";
+import type { PostVisibility, ThemeColor } from "../schema.ts";
 import { AccountForm } from "./AccountForm.tsx";
 import { DashboardLayout } from "./DashboardLayout.tsx";
 
@@ -11,6 +11,7 @@ export interface NewAccountPageProps {
     discoverable?: boolean;
     language?: string;
     visibility?: PostVisibility;
+    themeColor?: ThemeColor;
     news?: boolean;
   };
   errors?: {

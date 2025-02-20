@@ -271,6 +271,7 @@ function ProfilePage({
       links={[
         { rel: "alternate", type: "application/atom+xml", href: atomUrl },
       ]}
+      themeColor={accountOwner.themeColor}
     >
       <Profile accountOwner={accountOwner} />
       {featuredTags.length > 0 && (

@@ -6,9 +6,14 @@ Version 0.6.0
 
 To be released.
 
+ -  The theme color of the profile page is now customizable.  The list of all
+    available theme colors can be found in the [*Colors* section] of the Pico
+    CSS docs.
+
  -  On profile page, alt texts for images are now expanded within `<details>`.
     [[#99], [#110] by Okuto Oyama]
 
+[*Colors* section]: https://picocss.com/docs/colors
 [#110]: https://github.com/fedify-dev/hollo/pull/110
 
 

@@ -135,6 +135,33 @@ export const postVisibilityEnum = pgEnum("post_visibility", [
 
 export type PostVisibility = (typeof postVisibilityEnum.enumValues)[number];
 
+export const themeColorEnum = pgEnum("theme_color", [
+  "amber",
+  "azure",
+  "blue",
+  "cyan",
+  "fuchsia",
+  "green",
+  "grey",
+  "indigo",
+  "jade",
+  "lime",
+  "orange",
+  "pink",
+  "pumpkin",
+  "purple",
+  "red",
+  "sand",
+  "slate",
+  "violet",
+  "yellow",
+  "zinc",
+]);
+
+export type ThemeColor = (typeof themeColorEnum.enumValues)[number];
+
+export const THEME_COLORS: readonly ThemeColor[] = themeColorEnum.enumValues;
+
 export const accountOwners = pgTable("account_owners", {
   id: uuid("id")
     .$type<Uuid>()
@@ -155,6 +182,7 @@ export const accountOwners = pgTable("account_owners", {
   visibility: postVisibilityEnum("visibility").notNull().default("public"),
   language: text("language").notNull().default("en"),
   discoverable: boolean().notNull().default(false),
+  themeColor: themeColorEnum("theme_color").notNull(),
 });
 
 export type AccountOwner = typeof accountOwners.$inferSelect;

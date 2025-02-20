@@ -1,5 +1,6 @@
+import { capitalize } from "es-toolkit";
 import iso6391 from "iso-639-1";
-import type { PostVisibility } from "../schema";
+import { type PostVisibility, THEME_COLORS, type ThemeColor } from "../schema";
 
 export interface AccountFormProps {
   method?: "get" | "post" | "dialog";
@@ -15,6 +16,7 @@ export interface AccountFormProps {
     discoverable?: boolean;
     language?: string;
     visibility?: PostVisibility;
+    themeColor?: ThemeColor;
     news?: boolean;
   };
   errors?: {
@@ -143,6 +145,20 @@ export function AccountForm(props: AccountFormProps) {
             >
               Direct message
             </option>
+          </select>
+        </label>
+        <label>
+          Theme color{" "}
+          <select name="themeColor">
+            {THEME_COLORS.map((color) => (
+              <option
+                value={color}
+                selected={props.values?.themeColor === color}
+                class={`pico-color-${color}-500`}
+              >
+                {capitalize(color)}
+              </option>
+            ))}
           </select>
         </label>
       </fieldset>

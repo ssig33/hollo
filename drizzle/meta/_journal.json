@@ -442,6 +442,13 @@
       "when": 1739975582676,
       "tag": "0062_follows_follower_id_accounts_id_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1740044940940,
+      "tag": "0063_theme_color",
+      "breakpoints": true
     }
   ]
 }
