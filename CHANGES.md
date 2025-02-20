@@ -9,6 +9,8 @@ To be released.
  -  On profile page, alt texts for images are now expanded within `<details>`.
     [[#99], [#110] by Okuto Oyama]
 
+[#110]: https://github.com/fedify-dev/hollo/pull/110
+
 
 Version 0.5.2
 -------------
