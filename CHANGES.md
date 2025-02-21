@@ -16,6 +16,8 @@ To be released.
  -  On profile page, alt texts for images are now expanded within `<details>`.
     [[#99], [#110] by Okuto Oyama]
 
+ -  The `scope` parameter is now optional for `POST /oauth/token` endpoint.
+
 [*Colors* section]: https://picocss.com/docs/colors
 [#110]: https://github.com/fedify-dev/hollo/pull/110
 [#111]: https://github.com/fedify-dev/hollo/issues/111

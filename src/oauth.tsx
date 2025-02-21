@@ -364,8 +364,7 @@ app.post("/token", cors(), async (c) => {
       401,
     );
   }
-  const scopes = form.scope ?? ["read"];
-  if (scopes.some((s) => !application.scopes.includes(s))) {
+  if (form.scope?.some((s) => !application.scopes.includes(s))) {
     return c.json(
       {
         error: "invalid_scope",
@@ -460,7 +459,7 @@ app.post("/token", cors(), async (c) => {
     .values({
       code,
       applicationId: application.id,
-      scopes,
+      scopes: form.scope ?? application.scopes,
       grant_type: "client_credentials",
     })
     .returning();
