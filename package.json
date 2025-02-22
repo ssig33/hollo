@@ -5,9 +5,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prod": "pnpm run migrate && tsx --env-file-if-exists=.env --dns-result-order=ipv6first src/index.tsx",
-    "dev": "pnpm run migrate && tsx watch --env-file-if-exists=.env --dns-result-order=ipv6first src/index.tsx",
+    "prod": "pnpm run migrate && tsx --env-file-if-exists=.env --dns-result-order=ipv6first bin/server.ts",
+    "dev": "pnpm run migrate && tsx watch --env-file-if-exists=.env --dns-result-order=ipv6first bin/server.ts",
+    "test": "tsx --env-file-if-exists=.env.test --test",
     "check": "tsc && biome check .",
+    "check:ci": "tsc && biome ci --reporter=github .",
     "migrate": "drizzle-kit migrate",
     "migrate:generate": "drizzle-kit generate",
     "rebuild-timelines": "tsx --env-file-if-exists=.env scripts/rebuild-timelines.ts"
@@ -58,6 +60,7 @@
     "@biomejs/biome": "^1.9.4",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/markdown-it": "^14.1.2",
+    "@types/node": "^22.13.4",
     "@types/qrcode": "^1.5.5",
     "@types/semver": "^7.5.8",
     "typescript": "^5.7.2"

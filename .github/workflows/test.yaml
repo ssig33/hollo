@@ -1,0 +1,81 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+      - stable
+      - "*.*-maintenance"
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.1+sha512.1acb565e6193efbebda772702950469150cf12bcc764262e7587e71d19dc98a423dff9536e57ea44c49bdf790ff694e83c27be5faa23d67e0c033b583be4bfcf
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm run check:ci
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: hollo_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10ms
+          --health-timeout 3s
+          --health-retries 50
+        ports:
+          - 5432:5432
+    env:
+      # HOME_URL=https://localhost/  # optional; if present, the home page will redirect to this URL
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hollo_test
+      # generate a secret key with `openssl rand -base64 32`
+      SECRET_KEY: "4b5Lr8rpzOCH1q3JL47SThetLNjUhEsAvHxio4Zjp9g="
+      LOG_LEVEL: debug
+      LOG_QUERY: true
+
+      BEHIND_PROXY: false
+      LISTEN_PORT: 3000
+      LISTEN_HOST: localhost
+      # Setting ALLOW_PRIVATE_ADDRESS to true disables SSRF (Server-Side Request Forgery) protection
+      # Set to true to test in local network
+      # Will be replaced by list of allowed IPs once https://github.com/dahlia/fedify/issues/157
+      # is implemented.
+      ALLOW_PRIVATE_ADDRESS: true
+      DRIVE_DISK: "fs"
+      FS_ASSET_PATH: ./tmp/test_storage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.1+sha512.1acb565e6193efbebda772702950469150cf12bcc764262e7587e71d19dc98a423dff9536e57ea44c49bdf790ff694e83c27be5faa23d67e0c033b583be4bfcf
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: pnpm
+      - run: pnpm install
+      - name: Ensure the directory for test uploads
+        run: mkdir -p tmp/test_storage
+      - name: Run the database migrations
+        run: pnpm run migrate
+      - name: Run the tests
+        run: pnpm test
