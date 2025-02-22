@@ -44,20 +44,9 @@ jobs:
           --health-retries 50
         ports:
           - 5432:5432
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10ms
-          --health-timeout 3s
-          --health-retries 50
-        ports:
-          - 6379:6379
     env:
       # HOME_URL=https://localhost/  # optional; if present, the home page will redirect to this URL
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hollo_test
-      REDIS_URL: redis://localhost/1
       # generate a secret key with `openssl rand -base64 32`
       SECRET_KEY: "4b5Lr8rpzOCH1q3JL47SThetLNjUhEsAvHxio4Zjp9g="
       LOG_LEVEL: debug
