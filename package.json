@@ -7,10 +7,11 @@
   "scripts": {
     "prod": "pnpm run migrate && tsx --env-file-if-exists=.env --dns-result-order=ipv6first bin/server.ts",
     "dev": "pnpm run migrate && tsx watch --env-file-if-exists=.env --dns-result-order=ipv6first bin/server.ts",
-    "test": "tsx --env-file-if-exists=.env.test --test",
+    "test": "pnpm run migrate:test && tsx --env-file-if-exists=.env.test --test",
     "check": "tsc && biome check .",
     "check:ci": "tsc && biome ci --reporter=github .",
     "migrate": "drizzle-kit migrate",
+    "migrate:test": "dotenvx run -f .env.test -- drizzle-kit migrate",
     "migrate:generate": "drizzle-kit generate",
     "rebuild-timelines": "tsx --env-file-if-exists=.env scripts/rebuild-timelines.ts"
   },
@@ -58,6 +59,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@dotenvx/dotenvx": "^1.37.0",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^22.13.4",
