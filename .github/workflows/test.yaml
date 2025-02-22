@@ -78,4 +78,4 @@ jobs:
       - name: Run the database migrations
         run: pnpm run migrate
       - name: Run the tests
-        run: pnpm test
+        run: pnpm test:ci
