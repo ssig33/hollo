@@ -3,3 +3,4 @@ assets/
 fedify-hollo-*.tgz
 *.jsonl
 node_modules/
+tmp/
