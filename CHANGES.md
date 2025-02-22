@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.4.9
 -------------
 
-To be released.
+Released on February 22, 2025.
 
  -  Fixed a bug where when an account profile had been updated, the `Update`
     activity had been made with no `assertionMethods` field, which had caused
