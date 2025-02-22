@@ -6,6 +6,12 @@ Version 0.6.0
 
 To be released.
 
+ -  Renamed the `PORT` environment variable to `LISTEN_PORT`.
+    [[#114] by Emelia Smith]
+
+ -  Added the `LISTEN_HOST` environment variable to specify the host address to
+    listen on.  [[#114] by Emelia Smith]
+
  -  The theme color of the profile page is now customizable.  The list of all
     available theme colors can be found in the [*Colors* section] of the Pico
     CSS docs.
@@ -21,6 +27,7 @@ To be released.
 [*Colors* section]: https://picocss.com/docs/colors
 [#110]: https://github.com/fedify-dev/hollo/pull/110
 [#111]: https://github.com/fedify-dev/hollo/issues/111
+[#114]: https://github.com/fedify-dev/hollo/pull/114
 
 
 Version 0.5.2
