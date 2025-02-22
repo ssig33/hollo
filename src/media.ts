@@ -4,8 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import ffmpeg from "fluent-ffmpeg";
 import type { Sharp } from "sharp";
-import { disk } from "./storage";
-import { getAssetUrl } from "./storage";
+import { drive } from "./storage";
 
 const DEFAULT_THUMBNAIL_AREA = 230_400;
 
@@ -19,9 +18,9 @@ export interface Thumbnail {
 export async function uploadThumbnail(
   id: string,
   original: Sharp,
-  url: URL | string,
   thumbnailArea = DEFAULT_THUMBNAIL_AREA,
 ): Promise<Thumbnail> {
+  const disk = drive.use();
   const originalMetadata = await original.metadata();
   let width = originalMetadata.width!;
   let height = originalMetadata.height!;
@@ -55,7 +54,7 @@ export async function uploadThumbnail(
     throw error;
   }
   return {
-    thumbnailUrl: getAssetUrl(`media/${id}/thumbnail.webp`, url),
+    thumbnailUrl: await disk.getUrl(`media/${id}/thumbnail.webp`),
     thumbnailType: "image/webp",
     thumbnailWidth: thumbnailSize.width,
     thumbnailHeight: thumbnailSize.height,

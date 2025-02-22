@@ -56,8 +56,10 @@ jobs:
       # Will be replaced by list of allowed IPs once https://github.com/dahlia/fedify/issues/157
       # is implemented.
       ALLOW_PRIVATE_ADDRESS: false
+
       DRIVE_DISK: "fs"
-      FS_ASSET_PATH: ./tmp/test_storage
+      FS_STORAGE_PATH: ./tmp/test_storage
+      STORAGE_URL_BASE: "http://hollo.test/"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

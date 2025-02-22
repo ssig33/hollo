@@ -10,7 +10,7 @@ import fedi from "./federation";
 import image from "./image";
 import oauth, { oauthAuthorizationServer } from "./oauth";
 import pages from "./pages";
-import { DRIVE_DISK, assetPath } from "./storage";
+import { DRIVE_DISK, FS_STORAGE_PATH } from "./storage";
 
 const app = new Hono();
 
@@ -23,7 +23,7 @@ if (DRIVE_DISK === "fs") {
   app.use(
     "/assets/*",
     serveStatic({
-      root: relative(process.cwd(), assetPath!),
+      root: relative(process.cwd(), FS_STORAGE_PATH!),
       rewriteRequestPath: (path) => path.substring("/assets".length),
     }),
   );

@@ -6,7 +6,7 @@ import { DashboardLayout } from "../components/DashboardLayout";
 import db from "../db";
 import { loginRequired } from "../login";
 import { accounts, customEmojis, posts, reactions } from "../schema";
-import { disk, getAssetUrl } from "../storage";
+import { drive } from "../storage";
 
 const logger = getLogger(["hollo", "pages", "emojis"]);
 
@@ -153,6 +153,7 @@ emojis.get("/new", async (c) => {
 });
 
 emojis.post("/", async (c) => {
+  const disk = drive.use();
   const form = await c.req.formData();
   const categoryValue = form.get("category")?.toString();
   const category = categoryValue?.startsWith("category:")
@@ -185,9 +186,14 @@ emojis.post("/", async (c) => {
       visibility: "public",
     });
   } catch (error) {
+    logger.error("Failed to store emoji image", {
+      error,
+      path,
+      contentLength: content.byteLength,
+    });
     return c.text("Failed to store emoji image", 500);
   }
-  const url = getAssetUrl(path, c.req.url);
+  const url = await disk.getUrl(path);
   await db.insert(customEmojis).values({
     category,
     shortcode,
