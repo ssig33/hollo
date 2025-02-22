@@ -6,6 +6,12 @@ Version 0.5.3
 
 To be released.
 
+ -  Fixed a bug where when an account profile had been updated, the `Update`
+    activity had been made with no `assertionMethods` field, which had caused
+    interoperability issues with Mitra.
+
+ -  Upgrade Fedify to 1.4.3.
+
 
 Version 0.5.2
 -------------
@@ -86,6 +92,18 @@ Released on February 12, 2025.
 [#106]: https://github.com/fedify-dev/hollo/pull/106
 [`GET /api/v1/mutes`]: https://docs.joinmastodon.org/methods/mutes/#get
 [`GET /api/v1/blocks`]: https://docs.joinmastodon.org/methods/blocks/#get
+
+
+Version 0.4.9
+-------------
+
+Released on February 22, 2025.
+
+ -  Fixed a bug where when an account profile had been updated, the `Update`
+    activity had been made with no `assertionMethods` field, which had caused
+    interoperability issues with Mitra.
+
+ -  Upgrade Fedify to 1.3.10.
 
 
 Version 0.4.8
@@ -235,6 +253,18 @@ Released on December 30, 2024.
 
 [`discoverable`]: https://docs.joinmastodon.org/spec/activitypub/#discoverable
 [#65]: https://github.com/fedify-dev/hollo/issues/65
+
+
+Version 0.3.8
+-------------
+
+Released on February 22, 2025.
+
+ -  Fixed a bug where when an account profile had been updated, the `Update`
+    activity had been made with no `assertionMethods` field, which had caused
+    interoperability issues with Mitra.
+
+ -  Upgrade Fedify to 1.3.10.
 
 
 Version 0.3.7
