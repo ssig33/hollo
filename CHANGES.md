@@ -6,6 +6,12 @@ Version 0.3.8
 
 To be released.
 
+ -  Fixed a bug where when an account profile had been updated, the `Update`
+    activity had been made with no `assertionMethods` field, which had caused
+    interoperability issues with Mitra.
+
+ -  Upgrade Fedify to 1.3.10.
+
 
 Version 0.3.7
 -------------
