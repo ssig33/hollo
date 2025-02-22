@@ -68,6 +68,13 @@ export function DashboardLayout(
                 <a href="/auth">Auth</a>
               )}
             </li>
+            <li>
+              <form method="post" action="/logout" class="logout-form">
+                <button type="submit" class="secondary logout-btn">
+                  Logout
+                </button>
+              </form>
+            </li>
           </ul>
         </nav>
       </header>
