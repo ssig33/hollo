@@ -12,18 +12,18 @@ configureSentry(process.env["SENTRY_DSN"]);
 const BEHIND_PROXY = process.env["BEHIND_PROXY"] === "true";
 
 // biome-ignore lint/complexity/useLiteralKeys: tsc complains about this (TS4111)
-const LISTEN_HOST = process.env["LISTEN_HOST"];
+const LISTEN_HOST = process.env["HOST"];
 
 // biome-ignore lint/complexity/useLiteralKeys: tsc complains about this (TS4111)
-const LISTEN_PORT = Number.parseInt(process.env["LISTEN_PORT"] ?? "3000", 10);
+const LISTEN_PORT = Number.parseInt(process.env["PORT"] ?? "3000", 10);
 
 if (!Number.isInteger(LISTEN_PORT)) {
-  console.error("Invalid LISTEN_PORT: must be an integer");
+  console.error("Invalid PORT: must be an integer");
   process.exit(1);
 }
 
 if (LISTEN_HOST && LISTEN_HOST !== "localhost" && !isIP(LISTEN_HOST)) {
-  console.error("Invalid LISTEN_HOST: must be an IP address, if specified");
+  console.error("Invalid HOST: must be an IP address, if specified");
   process.exit(1);
 }
 

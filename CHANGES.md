@@ -6,10 +6,7 @@ Version 0.6.0
 
 To be released.
 
- -  Renamed the `PORT` environment variable to `LISTEN_PORT`.
-    [[#114] by Emelia Smith]
-
- -  Added the `LISTEN_HOST` environment variable to specify the host address to
+ -  Added the `HOST` environment variable to specify the host address to
     listen on.  [[#114] by Emelia Smith]
 
  -  The theme color of the profile page is now customizable.  The list of all
