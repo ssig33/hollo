@@ -12,18 +12,20 @@ configureSentry(process.env["SENTRY_DSN"]);
 const BEHIND_PROXY = process.env["BEHIND_PROXY"] === "true";
 
 // biome-ignore lint/complexity/useLiteralKeys: tsc complains about this (TS4111)
-const LISTEN_HOST = process.env["HOST"];
+const BIND = process.env["BIND"];
 
 // biome-ignore lint/complexity/useLiteralKeys: tsc complains about this (TS4111)
-const LISTEN_PORT = Number.parseInt(process.env["PORT"] ?? "3000", 10);
+const PORT = Number.parseInt(process.env["PORT"] ?? "3000", 10);
 
-if (!Number.isInteger(LISTEN_PORT)) {
+if (!Number.isInteger(PORT)) {
   console.error("Invalid PORT: must be an integer");
   process.exit(1);
 }
 
-if (LISTEN_HOST && LISTEN_HOST !== "localhost" && !isIP(LISTEN_HOST)) {
-  console.error("Invalid HOST: must be an IP address, if specified");
+if (BIND && BIND !== "localhost" && !isIP(BIND)) {
+  console.error(
+    "Invalid BIND: must be an IP address or localhost, if specified",
+  );
   process.exit(1);
 }
 
@@ -32,12 +34,13 @@ serve(
     fetch: BEHIND_PROXY
       ? behindProxy(app.fetch.bind(app))
       : app.fetch.bind(app),
-    port: LISTEN_PORT,
-    hostname: LISTEN_HOST ?? "localhost",
+    port: PORT,
+    hostname: BIND,
   },
   (info) => {
     let host = info.address;
-    if (LISTEN_HOST === "localhost") {
+    // We override it here to show localhost instead of what it resolves to:
+    if (BIND === "localhost") {
       host = "localhost";
     } else if (info.family === "IPv6") {
       host = `[${info.address}]`;
