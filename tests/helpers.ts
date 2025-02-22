@@ -1,7 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { after } from "node:test";
+import { after, before } from "node:test";
+import { sql } from "drizzle-orm";
 import { serializeSigned } from "hono/utils/cookie";
+
 import db from "../src/db";
 import { drive } from "../src/storage";
 
@@ -28,6 +30,27 @@ export async function getLoginCookie() {
     path: "/",
   });
 }
+
+export async function cleanDatabase() {
+  const schema = "public";
+  const tables = await db.execute<Record<"table_name", string>>(
+    sql`SELECT table_name FROM information_schema.tables WHERE table_schema = ${schema} AND table_type = 'BASE TABLE';`,
+  );
+
+  const tableExpression = tables
+    .map((table) => {
+      return [`"${schema}"`, `"${table.table_name}"`].join(".");
+    })
+    .join(", ");
+
+  await db.execute(
+    sql.raw(`TRUNCATE TABLE ${tableExpression} RESTART IDENTITY CASCADE`),
+  );
+}
+
+before(async () => {
+  await cleanDatabase();
+});
 
 // Automatically close the database and remove test file uploads
 // Without this the tests hang due to the database
