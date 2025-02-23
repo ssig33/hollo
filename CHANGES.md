@@ -7,7 +7,7 @@ Version 0.6.0
 To be released.
 
  -  Added the `BIND` environment variable to specify the host address to
-    listen on.  [[#114] by Emelia Smith]
+    listen on.  [[#114], [#120] by Emelia Smith]
 
  -  The theme color of the profile page is now customizable.  The list of all
     available theme colors can be found in the [*Colors* section] of the Pico
@@ -29,6 +29,7 @@ To be released.
 [#110]: https://github.com/fedify-dev/hollo/pull/110
 [#111]: https://github.com/fedify-dev/hollo/issues/111
 [#114]: https://github.com/fedify-dev/hollo/pull/114
+[#120]: https://github.com/fedify-dev/hollo/pull/120
 [#122]: https://github.com/fedify-dev/hollo/pull/122
 
 
