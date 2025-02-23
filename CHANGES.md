@@ -6,6 +6,15 @@ Version 0.6.0
 
 To be released.
 
+ -  Revamped the environment variables for asset storage configuration.
+    [[#115], [#121] by Emelia Smith]
+
+     -  Added `FS_STORAGE_PATH` environment variable, which is required where
+        `DRIVE_DISK` is set to `fs`.
+     -  Added `STORAGE_URL_BASE` environment variable, which is required.
+     -  Deprecated `FS_ASSET_PATH` in favor of `FS_STORAGE_PATH`.
+     -  Deprecated `ASSET_URL_BASE` in favor of `STORAGE_URL_BASE`.
+
  -  Added the `BIND` environment variable to specify the host address to
     listen on.  [[#114], [#120] by Emelia Smith]
 
@@ -29,7 +38,9 @@ To be released.
 [#110]: https://github.com/fedify-dev/hollo/pull/110
 [#111]: https://github.com/fedify-dev/hollo/issues/111
 [#114]: https://github.com/fedify-dev/hollo/pull/114
+[#115]: https://github.com/fedify-dev/hollo/issues/115
 [#120]: https://github.com/fedify-dev/hollo/pull/120
+[#121]: https://github.com/fedify-dev/hollo/pull/121
 [#122]: https://github.com/fedify-dev/hollo/pull/122
 
 
