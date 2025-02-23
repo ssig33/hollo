@@ -56,8 +56,10 @@ jobs:
       # Will be replaced by list of allowed IPs once https://github.com/dahlia/fedify/issues/157
       # is implemented.
       ALLOW_PRIVATE_ADDRESS: false
+
       DRIVE_DISK: "fs"
-      FS_ASSET_PATH: ./tmp/test_storage
+      FS_STORAGE_PATH: ./tmp/fakes
+      STORAGE_URL_BASE: "http://hollo.test/"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -69,8 +71,6 @@ jobs:
           node-version: 23
           cache: pnpm
       - run: pnpm install
-      - name: Ensure the directory for test uploads
-        run: mkdir -p tmp/test_storage
       - name: Run the database migrations
         run: pnpm run migrate
       - name: Run the tests

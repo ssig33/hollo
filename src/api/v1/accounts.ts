@@ -53,7 +53,7 @@ import {
   pinnedPosts,
   posts,
 } from "../../schema";
-import { disk, getAssetUrl } from "../../storage";
+import { drive } from "../../storage";
 import { extractCustomEmojis, formatText } from "../../text";
 import { type Uuid, isUuid } from "../../uuid";
 import { timelineQuerySchema } from "./timelines";
@@ -107,6 +107,7 @@ app.patch(
     }),
   ),
   async (c) => {
+    const disk = drive.use();
     const owner = c.get("token").accountOwner;
     if (owner == null) {
       return c.json(
@@ -133,7 +134,7 @@ app.patch(
         contentLength: content.byteLength,
         visibility: "public",
       });
-      avatarUrl = getAssetUrl(`${path}?${Date.now()}`, c.req.url);
+      avatarUrl = await disk.getUrl(path);
     }
     let coverUrl = undefined;
     if (form.header instanceof File) {
@@ -156,7 +157,7 @@ app.patch(
       } catch (error) {
         return c.json({ error: "Failed to upload header image." }, 500);
       }
-      coverUrl = getAssetUrl(`${path}?${Date.now()}`, c.req.url);
+      coverUrl = await disk.getUrl(path);
     }
     const fedCtx = federation.createContext(c.req.raw, undefined);
     const fmtOpts = {

@@ -416,7 +416,7 @@ export async function persistPost(
       }
       const image = sharp(imageBytes);
       metadata = await image.metadata();
-      thumbnail = await uploadThumbnail(id, image, baseUrl);
+      thumbnail = await uploadThumbnail(id, image);
     } catch {
       metadata = {
         width: attachment.width ?? 512,

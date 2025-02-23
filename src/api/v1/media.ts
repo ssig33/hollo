@@ -7,12 +7,13 @@ import { serializeMedium } from "../../entities/medium";
 import { makeVideoScreenshot, uploadThumbnail } from "../../media";
 import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
 import { media } from "../../schema";
-import { disk, getAssetUrl } from "../../storage";
+import { drive } from "../../storage";
 import { isUuid, uuidv7 } from "../../uuid";
 
 const app = new Hono<{ Variables: Variables }>();
 
 export async function postMedia(c: Context<{ Variables: Variables }>) {
+  const disk = drive.use();
   const owner = c.get("token").accountOwner;
   if (owner == null) {
     return c.json({ error: "This method requires an authenticated user" }, 422);
@@ -47,7 +48,7 @@ export async function postMedia(c: Context<{ Variables: Variables }>) {
   } catch (error) {
     return c.json({ error: "Failed to save media file" }, 500);
   }
-  const url = getAssetUrl(path, c.req.url);
+  const url = await disk.getUrl(path);
   const result = await db
     .insert(media)
     .values({
@@ -57,7 +58,7 @@ export async function postMedia(c: Context<{ Variables: Variables }>) {
       width: fileMetadata.width!,
       height: fileMetadata.height!,
       description,
-      ...(await uploadThumbnail(id, image, c.req.url)),
+      ...(await uploadThumbnail(id, image)),
     })
     .returning();
   if (result.length < 1) {

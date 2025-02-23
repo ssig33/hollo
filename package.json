@@ -8,7 +8,7 @@
     "prod": "pnpm run migrate && tsx --env-file-if-exists=.env --dns-result-order=ipv6first bin/server.ts",
     "dev": "pnpm run migrate && tsx watch --env-file-if-exists=.env --dns-result-order=ipv6first bin/server.ts",
     "test": "pnpm run migrate:test && tsx --env-file-if-exists=.env.test --test",
-    "test:ci": "drizzle-kit migrate && tsx --test --test-reporter=@reporters/github --test-reporter-destination=stdout",
+    "test:ci": "tsx --test --test-reporter=@reporters/github --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=stdout",
     "check": "tsc && biome check .",
     "check:ci": "tsc && biome ci --reporter=github .",
     "migrate": "drizzle-kit migrate",
