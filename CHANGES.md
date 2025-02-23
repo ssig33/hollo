@@ -6,7 +6,7 @@ Version 0.6.0
 
 To be released.
 
- -  Added the `HOST` environment variable to specify the host address to
+ -  Added the `BIND` environment variable to specify the host address to
     listen on.  [[#114] by Emelia Smith]
 
  -  The theme color of the profile page is now customizable.  The list of all

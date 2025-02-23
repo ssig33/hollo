@@ -47,19 +47,15 @@ jobs:
     env:
       # HOME_URL=https://localhost/  # optional; if present, the home page will redirect to this URL
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hollo_test
-      # generate a secret key with `openssl rand -base64 32`
-      SECRET_KEY: "4b5Lr8rpzOCH1q3JL47SThetLNjUhEsAvHxio4Zjp9g="
+      SECRET_KEY: "test_determinist_key_DO_NOT_USE_IN_PRODUCTION"
       LOG_LEVEL: debug
       LOG_QUERY: true
 
-      BEHIND_PROXY: false
-      LISTEN_PORT: 3000
-      LISTEN_HOST: localhost
       # Setting ALLOW_PRIVATE_ADDRESS to true disables SSRF (Server-Side Request Forgery) protection
       # Set to true to test in local network
       # Will be replaced by list of allowed IPs once https://github.com/dahlia/fedify/issues/157
       # is implemented.
-      ALLOW_PRIVATE_ADDRESS: true
+      ALLOW_PRIVATE_ADDRESS: false
       DRIVE_DISK: "fs"
       FS_ASSET_PATH: ./tmp/test_storage
     steps:
