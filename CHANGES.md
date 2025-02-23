@@ -13,6 +13,9 @@ To be released.
     available theme colors can be found in the [*Colors* section] of the Pico
     CSS docs.
 
+ -  You can now sign out from the administration dashboard.
+    [[#50], [#122] by Emelia Smith]
+
  -  On profile page, shared posts are now more visually separated from the
     original posts, and the time of sharing is now shown.  [[#111]]
 
@@ -22,9 +25,11 @@ To be released.
  -  The `scope` parameter is now optional for `POST /oauth/token` endpoint.
 
 [*Colors* section]: https://picocss.com/docs/colors
+[#50]: https://github.com/fedify-dev/hollo/issues/50
 [#110]: https://github.com/fedify-dev/hollo/pull/110
 [#111]: https://github.com/fedify-dev/hollo/issues/111
 [#114]: https://github.com/fedify-dev/hollo/pull/114
+[#122]: https://github.com/fedify-dev/hollo/pull/122
 
 
 Version 0.5.3
