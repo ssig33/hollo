@@ -13,6 +13,7 @@ import {
   createClientCredential,
 } from "./oauth/helpers";
 import type { Variables } from "./oauth/middleware";
+import { scopesSchema } from "./oauth/validators";
 import {
   type Account,
   type AccountOwner,
@@ -26,25 +27,6 @@ import { renderCustomEmojis } from "./text";
 import { uuid } from "./uuid";
 
 const app = new Hono<{ Variables: Variables }>();
-
-const scopesSchema = z
-  .string()
-  .trim()
-  .transform((v, ctx) => {
-    const scopes: Scope[] = [];
-    for (const scope of v.split(/\s+/g)) {
-      if (!scopeEnum.enumValues.includes(scope as Scope)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.invalid_enum_value,
-          options: scopeEnum.enumValues,
-          received: scope,
-        });
-        return z.NEVER;
-      }
-      scopes.push(scope as Scope);
-    }
-    return scopes;
-  });
 
 app.get(
   "/authorize",
