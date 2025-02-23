@@ -1,17 +1,19 @@
-import { base64 } from "@hexagon/base64";
 import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import { escape } from "es-toolkit";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
-import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { Layout } from "./components/Layout";
 import { db } from "./db";
-import { SECRET_KEY } from "./env";
 import { loginRequired } from "./login";
 import {
-  type AccessToken,
+  createAccessToken,
+  createAuthorizationCode,
+  createClientCredential,
+} from "./oauth/helpers";
+import type { Variables } from "./oauth/middleware";
+import {
   type Account,
   type AccountOwner,
   type Application,
@@ -22,85 +24,6 @@ import {
 } from "./schema";
 import { renderCustomEmojis } from "./text";
 import { uuid } from "./uuid";
-
-export type Variables = {
-  token: AccessToken & {
-    application: Application;
-    accountOwner:
-      | (AccountOwner & { account: Account & { successor: Account | null } })
-      | null;
-  };
-};
-
-export const tokenRequired = createMiddleware(async (c, next) => {
-  const authorization = c.req.header("Authorization");
-  if (authorization == null) return c.json({ error: "unauthorized" }, 401);
-  const match = /^(?:bearer|token)\s+(.+)$/i.exec(authorization);
-  if (match == null) return c.json({ error: "unauthorized" }, 401);
-  const token = match[1];
-  let tokenCode: string;
-  if (token.includes("^")) {
-    // authorization code
-    const values = token.split("^");
-    if (values.length !== 3) return c.json({ error: "invalid_token" }, 401);
-    const [signature, created, code] = values;
-    const textEncoder = new TextEncoder();
-    const sig = base64.toArrayBuffer(signature, true);
-    const secretKey = await crypto.subtle.importKey(
-      "raw",
-      textEncoder.encode(SECRET_KEY),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"],
-    );
-    const verified = await crypto.subtle.verify(
-      { name: "HMAC", hash: "SHA-256" },
-      secretKey,
-      sig,
-      textEncoder.encode(`${created}^${code}`),
-    );
-    if (!verified) return c.json({ error: "invalid_token" }, 401);
-    tokenCode = code;
-  } else {
-    // client credentials
-    tokenCode = token;
-  }
-  const accessToken = await db.query.accessTokens.findFirst({
-    where: eq(accessTokens.code, tokenCode),
-    with: {
-      accountOwner: { with: { account: { with: { successor: true } } } },
-      application: true,
-    },
-  });
-  if (accessToken == null) return c.json({ error: "invalid_token" }, 401);
-  c.set("token", accessToken);
-  await next();
-});
-
-export function scopeRequired(scopes: Scope[]) {
-  return createMiddleware(async (c, next) => {
-    const token = c.get("token");
-    if (
-      !scopes.some(
-        (s) =>
-          token.scopes.includes(s) ||
-          token.scopes.includes(s.replace(/:[^:]+$/, "")) ||
-          ([
-            "read:blocks",
-            "write:blocks",
-            "read:follows",
-            "write:follows",
-            "read:mutes",
-            "write:mutes",
-          ].includes(s) &&
-            token.scopes.includes("follow")),
-      )
-    ) {
-      return c.json({ error: "insufficient_scope" }, 403);
-    }
-    await next();
-  });
-}
 
 const app = new Hono<{ Variables: Variables }>();
 
@@ -259,13 +182,18 @@ app.post(
     const application = await db.query.applications.findFirst({
       where: eq(applications.id, form.application_id),
     });
-    if (application == null) return c.notFound();
+    if (application == null) {
+      return c.notFound();
+    }
+
     if (form.scopes.some((s) => !application.scopes.includes(s))) {
       return c.json({ error: "invalid_scope" }, 400);
     }
+
     if (!application.redirectUris.includes(form.redirect_uri)) {
       return c.json({ error: "invalid_redirect_uri" }, 400);
     }
+
     const url = new URL(form.redirect_uri);
     if (form.decision === "deny") {
       url.searchParams.set("error", "access_denied");
@@ -274,23 +202,23 @@ app.post(
         "The resource owner or authorization server denied the request.",
       );
     } else {
-      const code = base64.fromArrayBuffer(
-        crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer,
-        true,
+      const code = await createAuthorizationCode(
+        application.id,
+        form.account_id,
+        form.scopes,
       );
-      await db.insert(accessTokens).values({
-        accountOwnerId: form.account_id,
-        code,
-        applicationId: application.id,
-        scopes: form.scopes,
-      });
+
       if (form.redirect_uri === "urn:ietf:wg:oauth:2.0:oob") {
         return c.html(
           <AuthorizationCodePage application={application} code={code} />,
         );
       }
+
       url.searchParams.set("code", code);
-      if (form.state != null) url.searchParams.set("state", form.state);
+
+      if (form.state != null) {
+        url.searchParams.set("state", form.state);
+      }
     }
     return c.redirect(url.href);
   },
@@ -346,6 +274,7 @@ app.post("/token", cors(), async (c) => {
     }
     form = result.data;
   }
+
   const application = await db.query.applications.findFirst({
     where: eq(applications.clientId, form.client_id),
   });
@@ -397,6 +326,7 @@ app.post("/token", cors(), async (c) => {
       where: eq(accessTokens.code, form.code),
       with: { application: true },
     });
+
     if (token == null || token.grant_type !== "authorization_code") {
       return c.json(
         {
@@ -423,49 +353,38 @@ app.post("/token", cors(), async (c) => {
       );
     }
 
-    const now = (Date.now() / 1000) | 0;
-    const message = `${now}^${token.code}`;
-    const textEncoder = new TextEncoder();
-    const secretKey = await crypto.subtle.importKey(
-      "raw",
-      textEncoder.encode(SECRET_KEY),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"],
-    );
-    const signature = await crypto.subtle.sign(
-      "HMAC",
-      secretKey,
-      textEncoder.encode(message),
-    );
-    const accessToken = `${base64.fromArrayBuffer(signature, true)}^${message}`;
+    const accessToken = await createAccessToken(token);
+
     return c.json({
-      access_token: accessToken,
-      token_type: "Bearer",
-      scope: token.scopes.join(" "),
-      created_at: now,
+      access_token: accessToken.token,
+      token_type: accessToken.type,
+      scope: accessToken.scope,
+      created_at: accessToken.createdAt,
     });
   }
 
-  const code = base64.fromArrayBuffer(
-    crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer,
-    true,
+  if (form.grant_type === "client_credentials") {
+    const clientCredential = await createClientCredential(
+      application,
+      form.scope,
+    );
+
+    return c.json({
+      access_token: clientCredential.token,
+      token_type: clientCredential.type,
+      scope: clientCredential.scope,
+      created_at: clientCredential.createdAt,
+    });
+  }
+
+  return c.json(
+    {
+      error: "unsupported_grant_type",
+      error_description:
+        "The authorization grant type is not supported by the authorization server.",
+    },
+    400,
   );
-  const tokens = await db
-    .insert(accessTokens)
-    .values({
-      code,
-      applicationId: application.id,
-      scopes: form.scope ?? application.scopes,
-      grant_type: "client_credentials",
-    })
-    .returning();
-  return c.json({
-    access_token: tokens[0].code,
-    token_type: "Bearer",
-    scope: tokens[0].scopes.join(" "),
-    created_at: (+tokens[0].created / 1000) | 0,
-  });
 });
 
 export async function oauthAuthorizationServer(c: Context) {

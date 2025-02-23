@@ -13,7 +13,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 import db from "../../db";
 import { serializeFeaturedTag } from "../../entities/tag";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import type * as schema from "../../schema";
 import { featuredTags, posts } from "../../schema";
 import { type Uuid, isUuid, uuidv7 } from "../../uuid";

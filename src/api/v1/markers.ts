@@ -4,7 +4,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../db";
 import { serializeMarkers } from "../../entities/marker";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import { type MarkerType, type NewMarker, markers } from "../../schema";
 
 const app = new Hono<{ Variables: Variables }>();

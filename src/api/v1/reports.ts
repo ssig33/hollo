@@ -6,7 +6,11 @@ import { z } from "zod";
 import { db } from "../../db";
 import { serializeReport } from "../../entities/report";
 import federation from "../../federation";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import {
   type Post,
   type Report,

@@ -7,7 +7,11 @@ import { db } from "../../db";
 import { serializeAccount } from "../../entities/account";
 import { getPostRelations, serializePost } from "../../entities/status";
 import { serializeTag } from "../../entities/tag";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import {
   accounts as accountsTable,
   blocks,
