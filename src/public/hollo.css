@@ -1,0 +1,11 @@
+.logout-form {
+  display: inline-flex;
+  margin: 0;
+}
+
+.logout-btn {
+  margin: 0;
+  padding: var(--pico-nav-link-spacing-vertical) var(--pico-nav-link-spacing-horizontal);
+  display: inline-block;
+  width: auto !important;
+}
