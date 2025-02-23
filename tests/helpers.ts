@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import { serializeSigned } from "hono/utils/cookie";
 
 import db from "../src/db";
+import { SECRET_KEY } from "../src/env";
 import { drive } from "../src/storage";
 
 const fixtureFiles = join(import.meta.dirname, "fixtures", "files");
@@ -20,9 +21,6 @@ export async function getFixtureFile(
     type,
   });
 }
-
-// biome-ignore lint/complexity/useLiteralKeys: tsc complains about this (TS4111)
-const SECRET_KEY = process.env["SECRET_KEY"];
 
 export async function getLoginCookie() {
   // Same logic as in src/pages/login.tsx

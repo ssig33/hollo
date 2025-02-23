@@ -8,6 +8,7 @@ import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { Layout } from "./components/Layout";
 import { db } from "./db";
+import { SECRET_KEY } from "./env";
 import { loginRequired } from "./login";
 import {
   type AccessToken,
@@ -30,10 +31,6 @@ export type Variables = {
       | null;
   };
 };
-
-// biome-ignore lint/complexity/useLiteralKeys: tsc complains about this (TS4111)
-const SECRET_KEY = process.env["SECRET_KEY"];
-if (SECRET_KEY == null) throw new Error("SECRET_KEY is required");
 
 export const tokenRequired = createMiddleware(async (c, next) => {
   const authorization = c.req.header("Authorization");
