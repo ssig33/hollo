@@ -9,11 +9,10 @@ import {
 } from "../../../tests/helpers/oauth";
 
 import app from "../../index";
-import type * as Schema from "../../schema";
 
 describe("/api/v1/accounts/", () => {
-  let client: Schema.Application;
-  let account: Schema.Account;
+  let client: Awaited<ReturnType<typeof createOAuthApplication>>;
+  let account: Awaited<ReturnType<typeof createAccount>>;
 
   beforeEach(async () => {
     account = await createAccount();

@@ -10,8 +10,10 @@ import {
   createAuthorizationCode,
 } from "../../src/oauth/helpers";
 
-export async function createAccount() {
-  const [account] = await db.transaction(async (tx) => {
+export async function createAccount(
+  options = { generateKeyPair: false },
+): Promise<Pick<Schema.Account, "id">> {
+  const account = await db.transaction(async (tx) => {
     await tx
       .insert(Schema.instances)
       .values({
@@ -20,6 +22,7 @@ export async function createAccount() {
         softwareVersion: null,
       })
       .onConflictDoNothing();
+
     const account = await tx
       .insert(Schema.accounts)
       .values({
@@ -39,32 +42,50 @@ export async function createAccount() {
         featuredUrl: "https://hollo.test/@hollo/pinned",
         published: new Date(),
       })
-      .returning();
+      .returning({ id: Schema.accounts.id });
 
-    const rsaKeyPair = await generateCryptoKeyPair("RSASSA-PKCS1-v1_5");
-    const ed25519KeyPair = await generateCryptoKeyPair("Ed25519");
+    const keyPairs: {
+      rsaPrivateKeyJwk: object;
+      rsaPublicKeyJwk: object;
+      ed25519PrivateKeyJwk: object;
+      ed25519PublicKeyJwk: object;
+    } = {
+      rsaPrivateKeyJwk: {},
+      rsaPublicKeyJwk: {},
+      ed25519PrivateKeyJwk: {},
+      ed25519PublicKeyJwk: {},
+    };
 
-    const owner = await tx
+    if (options.generateKeyPair) {
+      const rsaKeyPair = await generateCryptoKeyPair("RSASSA-PKCS1-v1_5");
+      const ed25519KeyPair = await generateCryptoKeyPair("Ed25519");
+
+      keyPairs.rsaPrivateKeyJwk = await exportJwk(rsaKeyPair.privateKey);
+      keyPairs.rsaPublicKeyJwk = await exportJwk(rsaKeyPair.publicKey);
+      keyPairs.ed25519PrivateKeyJwk = await exportJwk(
+        ed25519KeyPair.privateKey,
+      );
+      keyPairs.ed25519PublicKeyJwk = await exportJwk(ed25519KeyPair.publicKey);
+    }
+
+    await tx
       .insert(Schema.accountOwners)
       .values({
         id: account[0].id,
         handle: "hollo",
-        rsaPrivateKeyJwk: await exportJwk(rsaKeyPair.privateKey),
-        rsaPublicKeyJwk: await exportJwk(rsaKeyPair.publicKey),
-        ed25519PrivateKeyJwk: await exportJwk(ed25519KeyPair.privateKey),
-        ed25519PublicKeyJwk: await exportJwk(ed25519KeyPair.publicKey),
+        ...keyPairs,
         bio: "",
         language: "en",
         visibility: "public",
         themeColor: "amber",
         discoverable: false,
       })
-      .returning();
+      .returning({ id: Schema.accountOwners.id });
 
-    return [account[0], owner[0]];
+    return account;
   });
 
-  return account;
+  return account[0];
 }
 
 export type OAuthApplicationOptions = {
@@ -74,7 +95,7 @@ export type OAuthApplicationOptions = {
 
 export async function createOAuthApplication(
   options: OAuthApplicationOptions = {},
-): Promise<Schema.Application> {
+): Promise<Pick<Schema.Application, "id">> {
   const clientId = base64.fromArrayBuffer(
     crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer,
     true,
@@ -95,24 +116,20 @@ export async function createOAuthApplication(
       clientId,
       clientSecret,
     } satisfies Schema.NewApplication)
-    .returning();
+    .returning({ id: Schema.applications.id });
 
   return app[0];
 }
 
 export async function getAccessToken(
-  client: Schema.Application,
-  account: Schema.Account,
+  client: Pick<Schema.Application, "id">,
+  account: Pick<Schema.Account, "id">,
   scopes: Schema.Scope[] = [],
 ) {
   const code = await createAuthorizationCode(client.id, account.id, scopes);
 
   const authorizationGrant = await db.query.accessTokens.findFirst({
     where: eq(Schema.accessTokens.code, code),
-    with: {
-      accountOwner: { with: { account: { with: { successor: true } } } },
-      application: true,
-    },
   });
 
   const accessToken = await createAccessToken(authorizationGrant!);
