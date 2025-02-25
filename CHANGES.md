@@ -6,6 +6,11 @@ Version 0.3.9
 
 To be released.
 
+ -  Fixed a bug where custom emojis in the display name and bio had not been
+    rendered correctly from other software including Mitra.
+
+ -  Upgrade Fedify to 1.3.11.
+
 
 Version 0.3.8
 -------------
