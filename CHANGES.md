@@ -6,6 +6,11 @@ Version 0.4.10
 
 To be released.
 
+ -  Fixed a bug where custom emojis in the display name and bio had not been
+    rendered correctly from other software including Mitra.
+
+ -  Upgrade Fedify to 1.3.11.
+
 
 Version 0.4.9
 -------------
@@ -166,6 +171,17 @@ Released on December 30, 2024.
 
 [`discoverable`]: https://docs.joinmastodon.org/spec/activitypub/#discoverable
 [#65]: https://github.com/fedify-dev/hollo/issues/65
+
+
+Version 0.3.9
+-------------
+
+Released on February 26, 2025.
+
+ -  Fixed a bug where custom emojis in the display name and bio had not been
+    rendered correctly from other software including Mitra.
+
+ -  Upgrade Fedify to 1.3.11.
 
 
 Version 0.3.8
