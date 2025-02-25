@@ -4,6 +4,7 @@ import { federation } from "@fedify/fedify/x/hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { captureException } from "@sentry/core";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 import api from "./api";
 import fedi from "./federation";
@@ -37,12 +38,29 @@ app.use(
   }),
 );
 
+const CorsPolicy = (allowMethods: string[]) =>
+  cors({
+    origin: "*",
+    allowMethods: allowMethods,
+  });
+
+// Mastodon's CORS policy also allows `/@:username` and `/users/:username`
+// the /api router adds its own cors policy middleware:
+app.use("/.well-known/*", CorsPolicy(["GET"]));
+app.use("/nodeinfo/*", CorsPolicy(["GET"]));
+app.use("/oauth/token", CorsPolicy(["POST"]));
+// Hollo doesn't support token revocation currently:
+// app.use("/oauth/revoke", CorsPolicy(["POST"]));
+app.use("/oauth/userinfo", CorsPolicy(["GET", "POST"]));
+
 app.use(federation(fedi, (_) => undefined));
+
 app.route("/", pages);
 app.route("/oauth", oauth);
-app.get("/.well-known/oauth-authorization-server", oauthAuthorizationServer);
 app.route("/api", api);
 app.route("/image", image);
+
+app.get("/.well-known/oauth-authorization-server", oauthAuthorizationServer);
 app.get("/nodeinfo/2.0", (c) => c.redirect("/nodeinfo/2.1"));
 
 export default app;

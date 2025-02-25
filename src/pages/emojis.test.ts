@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, it } from "node:test";
 import type { TestContext } from "node:test";
 
-import { getFixtureFile, getLoginCookie } from "../../tests/helpers";
+import { getFixtureFile } from "../../tests/helpers";
+import { getLoginCookie } from "../../tests/helpers/web";
 
 import db from "../db";
 import { customEmojis } from "../schema";

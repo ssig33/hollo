@@ -23,7 +23,11 @@ import {
 } from "../../entities/account";
 import { serializeReaction } from "../../entities/emoji";
 import { getPostRelations, serializePost } from "../../entities/status";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import {
   accounts,
   blocks,

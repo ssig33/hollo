@@ -7,7 +7,11 @@ import { db } from "../../db";
 import { serializePoll } from "../../entities/poll";
 import { federation } from "../../federation";
 import { toUpdate } from "../../federation/post";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import { pollOptions, pollVotes, polls } from "../../schema";
 import { isUuid } from "../../uuid";
 

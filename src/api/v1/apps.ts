@@ -3,7 +3,7 @@ import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../db";
-import { type Variables, tokenRequired } from "../../oauth";
+import { type Variables, tokenRequired } from "../../oauth/middleware";
 import {
   type NewApplication,
   type Scope,

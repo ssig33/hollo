@@ -9,7 +9,11 @@ import {
 } from "../../entities/account";
 import { federation } from "../../federation";
 import { updateAccountStats } from "../../federation/account";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import { accounts, blocks, follows, mutes } from "../../schema";
 import { isUuid } from "../../uuid";
 

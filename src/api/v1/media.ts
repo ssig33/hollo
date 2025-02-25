@@ -5,7 +5,11 @@ import sharp from "sharp";
 import { db } from "../../db";
 import { serializeMedium } from "../../entities/medium";
 import { makeVideoScreenshot, uploadThumbnail } from "../../media";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import { media } from "../../schema";
 import { drive } from "../../storage";
 import { isUuid, uuidv7 } from "../../uuid";

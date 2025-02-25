@@ -2,7 +2,6 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { after, before } from "node:test";
 import { sql } from "drizzle-orm";
-import { serializeSigned } from "hono/utils/cookie";
 
 import db from "../src/db";
 import { drive } from "../src/storage";
@@ -18,16 +17,6 @@ export async function getFixtureFile(
 
   return new File([data], name, {
     type,
-  });
-}
-
-// biome-ignore lint/complexity/useLiteralKeys: tsc complains about this (TS4111)
-const SECRET_KEY = process.env["SECRET_KEY"];
-
-export async function getLoginCookie() {
-  // Same logic as in src/pages/login.tsx
-  return serializeSigned("login", new Date().toISOString(), SECRET_KEY!, {
-    path: "/",
   });
 }
 

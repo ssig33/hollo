@@ -5,7 +5,11 @@ import { z } from "zod";
 import { db } from "../../db";
 import { serializeAccount } from "../../entities/account";
 import { serializeList } from "../../entities/list";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import { listMembers, lists } from "../../schema";
 import { isUuid, uuid, uuidv7 } from "../../uuid";
 

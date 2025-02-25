@@ -21,7 +21,11 @@ import {
   TIMELINE_INBOXES,
   TIMELINE_INBOX_LIMIT,
 } from "../../federation/timeline";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import {
   accountOwners,
   blocks,

@@ -2,7 +2,11 @@ import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../../db";
 import { serializeTag } from "../../entities/tag";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import { accountOwners } from "../../schema";
 
 const app = new Hono<{ Variables: Variables }>();

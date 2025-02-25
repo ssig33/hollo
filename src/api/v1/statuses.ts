@@ -40,7 +40,11 @@ import {
   toUpdate,
 } from "../../federation/post";
 import { appendPostToTimelines } from "../../federation/timeline";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import { type PreviewCard, fetchPreviewCard } from "../../previewcard";
 import {
   type Like,

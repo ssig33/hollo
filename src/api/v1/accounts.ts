@@ -36,7 +36,11 @@ import {
   persistAccountPosts,
   unfollowAccount,
 } from "../../federation/account";
-import { type Variables, scopeRequired, tokenRequired } from "../../oauth";
+import {
+  type Variables,
+  scopeRequired,
+  tokenRequired,
+} from "../../oauth/middleware";
 import {
   type Account,
   type AccountOwner,
