@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.5.4
 -------------
 
-To be released.
+Released on February 26, 2025.
 
  -  Fixed a bug where custom emojis in the display name and bio had not been
     rendered correctly from other software including Mitra.
