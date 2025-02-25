@@ -15,6 +15,13 @@ To be released.
      -  Deprecated `FS_ASSET_PATH` in favor of `FS_STORAGE_PATH`.
      -  Deprecated `ASSET_URL_BASE` in favor of `STORAGE_URL_BASE`.
 
+ -  Hollo now requires the `SECRET_KEY` environment variable to be at least 44
+    characters long.  This change ensures sufficient entropy for cryptographic
+    operations.  [[#126] by Emelia Smith]
+
+ -  Hollo now lets */.well-known/* and */oauth/* endpoints allow cross origin
+    requests which is aligned with those of Mastodon.  [[#126] by Emelia Smith]
+
  -  Added the `BIND` environment variable to specify the host address to
     listen on.  [[#114], [#120] by Emelia Smith]
 
@@ -42,6 +49,7 @@ To be released.
 [#120]: https://github.com/fedify-dev/hollo/pull/120
 [#121]: https://github.com/fedify-dev/hollo/pull/121
 [#122]: https://github.com/fedify-dev/hollo/pull/122
+[#126]: https://github.com/fedify-dev/hollo/pull/126
 
 
 Version 0.5.3
