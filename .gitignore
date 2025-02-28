@@ -4,3 +4,4 @@ fedify-hollo-*.tgz
 *.jsonl
 node_modules/
 tmp/
+mise.local.toml
