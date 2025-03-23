@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.4.11
 --------------
 
-To be released.
+Released on March 23, 2025.
 
  -  Fixed a bug where private replies were incorrectly delivered to all
     recipients of the original post, regardless of visibility settings.
