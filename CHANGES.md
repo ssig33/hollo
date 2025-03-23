@@ -6,6 +6,12 @@ Version 0.3.10
 
 To be released.
 
+ -  Fixed a bug where private replies were incorrectly delivered to all
+    recipients of the original post, regardless of visibility settings.
+
+ -  Improved privacy for direct messages by preventing delivery through
+    shared inboxes.
+
 
 Version 0.3.9
 -------------

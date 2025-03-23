@@ -343,7 +343,10 @@ export async function onPostCreated(
     }
     return post;
   });
-  if (post?.replyTargetId != null) {
+  if (
+    post?.replyTargetId != null &&
+    (post.visibility === "public" || post.visibility === "unlisted")
+  ) {
     const replyTarget = await db.query.posts.findFirst({
       where: eq(posts.id, post.replyTargetId),
       with: {

@@ -688,13 +688,19 @@ export function toObject(
     id: new URL(post.iri),
     attribution: new URL(post.account.iri),
     tos: [
+      // For public posts, include PUBLIC_COLLECTION
+      // For private posts, include followers collection
+      // For direct messages, don't include any collections
       ...(post.visibility === "public"
         ? [PUBLIC_COLLECTION]
         : post.visibility === "private" && post.account.owner != null
           ? [ctx.getFollowersUri(post.account.owner.handle)]
           : []),
+      // Always include mentioned users in the to field
       ...post.mentions.map((m) => new URL(m.account.iri)),
     ],
+    // For unlisted posts, include PUBLIC_COLLECTION in cc
+    // For all other visibilities, cc is null
     cc: post.visibility === "unlisted" ? PUBLIC_COLLECTION : null,
     summaries:
       post.summary == null
@@ -908,10 +914,13 @@ export function getRecipients(
   return post.mentions.map((m) => ({
     id: new URL(m.account.iri),
     inboxId: new URL(m.account.inboxUrl),
+    // For direct messages, don't use shared inbox to ensure privacy
     endpoints:
-      m.account.sharedInboxUrl == null
+      post.visibility === "direct"
         ? null
-        : { sharedInbox: new URL(m.account.sharedInboxUrl) },
+        : m.account.sharedInboxUrl == null
+          ? null
+          : { sharedInbox: new URL(m.account.sharedInboxUrl) },
   }));
 }
 
