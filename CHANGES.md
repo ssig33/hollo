@@ -6,6 +6,12 @@ Version 0.4.11
 
 To be released.
 
+ -  Fixed a bug where private replies were incorrectly delivered to all
+    recipients of the original post, regardless of visibility settings.
+
+ -  Improved privacy for direct messages by preventing delivery through
+    shared inboxes.
+
 
 Version 0.4.10
 --------------
@@ -177,6 +183,18 @@ Released on December 30, 2024.
 
 [`discoverable`]: https://docs.joinmastodon.org/spec/activitypub/#discoverable
 [#65]: https://github.com/fedify-dev/hollo/issues/65
+
+
+Version 0.3.10
+--------------
+
+Released on March 23, 2025.
+
+ -  Fixed a bug where private replies were incorrectly delivered to all
+    recipients of the original post, regardless of visibility settings.
+
+ -  Improved privacy for direct messages by preventing delivery through
+    shared inboxes.
 
 
 Version 0.3.9
