@@ -40,6 +40,8 @@ To be released.
 
  -  The `scope` parameter is now optional for `POST /oauth/token` endpoint.
 
+ - The current version string is displayed at the bottom of the dashboard page. [[#136], [#137] by RangHo Lee]
+
 [*Colors* section]: https://picocss.com/docs/colors
 [#50]: https://github.com/fedify-dev/hollo/issues/50
 [#110]: https://github.com/fedify-dev/hollo/pull/110
@@ -50,6 +52,8 @@ To be released.
 [#121]: https://github.com/fedify-dev/hollo/pull/121
 [#122]: https://github.com/fedify-dev/hollo/pull/122
 [#126]: https://github.com/fedify-dev/hollo/pull/126
+[#136]: https://github.com/fedify-dev/hollo/issues/136
+[#137]: https://github.com/fedify-dev/hollo/pull/137
 
 
 Version 0.5.5

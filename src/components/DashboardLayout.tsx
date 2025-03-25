@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "hono/jsx";
+import metadata from "../../package.json";
 import { Layout, type LayoutProps } from "./Layout";
 
 export type Menu = "accounts" | "emojis" | "federation" | "auth";
@@ -79,6 +80,13 @@ export function DashboardLayout(
         </nav>
       </header>
       {props.children}
+      <footer>
+        <p>
+          <strong>Hollo</strong>
+          <br />
+          Version {metadata.version}
+        </p>
+      </footer>
     </Layout>
   );
 }

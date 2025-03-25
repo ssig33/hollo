@@ -9,3 +9,11 @@
   display: inline-block;
   width: auto !important;
 }
+
+footer {
+  margin-block: calc(var(--pico-spacing) * 2);
+  padding-top: calc(var(--pico-spacing) * 2);
+  border-top: var(--pico-border-width) solid var(--pico-muted-border-color);
+  font-size: 0.75rem;
+  text-align: center;
+}
