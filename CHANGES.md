@@ -40,7 +40,10 @@ To be released.
 
  -  The `scope` parameter is now optional for `POST /oauth/token` endpoint.
 
- - The current version string is displayed at the bottom of the dashboard page. [[#136], [#137] by RangHo Lee]
+ -  The current version string is displayed at the bottom of the dashboard page.
+    [[#136], [#137] by RangHo Lee]
+
+ -  Increased the maximum character limit for posts from 4,096 to 10,000 characters.
 
 [*Colors* section]: https://picocss.com/docs/colors
 [#50]: https://github.com/fedify-dev/hollo/issues/50

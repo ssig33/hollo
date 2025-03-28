@@ -51,7 +51,7 @@ app.get("/", async (c) => {
       },
       statuses: {
         // TODO
-        max_characters: 4096,
+        max_characters: 10000,
         max_media_attachments: 8,
         characters_reserved_per_url: 256,
       },

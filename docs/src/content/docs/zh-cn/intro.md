@@ -29,7 +29,7 @@ Hollo 在大多数单用户需求上与 Mastodon 功能相当。你可以获得�
 
 在撰写贴文时，Hollo 保持灵活性。你可以：
 
-- 撰写最多 4096 字的贴文
+- 撰写最多 10,000 字的贴文
 - 使用 [CommonMark](https://commonmark.org/)（即 Markdown）进行轻松格式化
 - 使用 Misskey 风格的引用为你的贴文增添风采
 

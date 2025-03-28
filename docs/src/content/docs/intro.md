@@ -46,7 +46,7 @@ This means you can:
 
 When it comes to writing your posts, Hollo keeps things flexible. You can:
 
- -  Write posts up to 4,096 characters long
+ -  Write posts up to 10,000 characters long
  -  Use [CommonMark] (so-called Markdown) for easy formatting
  -  Use Misskey-style quotes to add some flair to your posts
 
