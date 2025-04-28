@@ -61,6 +61,19 @@ To be released.
 [#137]: https://github.com/fedify-dev/hollo/pull/137
 
 
+Version 0.5.6
+-------------
+
+Released on April 29, 2025.
+
+ -  Fixed a bug where voting to a poll which had been shared (boosted) had not
+    been sent to the correct recipient.  [[#142]]
+
+ -  Upgrade Fedify to 1.4.10.
+
+[#142]: https://github.com/fedify-dev/hollo/issues/142
+
+
 Version 0.5.5
 -------------
 
