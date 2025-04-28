@@ -9,6 +9,8 @@ To be released.
  -  Fixed a bug where voting to a poll which had been shared (boosted) had not
     been sent to the correct recipient.  [[#142]]
 
+ -  Upgrade Fedify to 1.4.10.
+
 [#142]: https://github.com/fedify-dev/hollo/issues/142
 
 
