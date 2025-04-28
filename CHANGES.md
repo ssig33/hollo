@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.5.6
 -------------
 
-To be released.
+Released on April 29, 2025.
 
  -  Fixed a bug where voting to a poll which had been shared (boosted) had not
     been sent to the correct recipient.  [[#142]]
