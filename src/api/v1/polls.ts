@@ -1,6 +1,7 @@
 import { Create, Note } from "@fedify/fedify";
 import { zValidator } from "@hono/zod-validator";
 import { and, eq, inArray, sql } from "drizzle-orm";
+import { maxBy } from "es-toolkit";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../db";
@@ -62,7 +63,7 @@ app.post(
           with: { account: true },
           where: eq(pollVotes.accountId, owner.id),
         },
-        post: {
+        posts: {
           with: {
             account: { with: { owner: true } },
             replyTarget: true,
@@ -133,7 +134,7 @@ app.post(
           with: { account: true },
           where: eq(pollVotes.accountId, owner.id),
         },
-        post: {
+        posts: {
           with: {
             account: { with: { owner: true } },
             replyTarget: true,
@@ -148,14 +149,16 @@ app.post(
     });
     if (poll == null) throw new Error("Record not found");
     const fedCtx = federation.createContext(c.req.raw, undefined);
-    if (poll.post.account.owner == null) {
+    const posts = poll.posts.filter((p) => p.sharingId == null);
+    const post = maxBy(posts, (p) => +(p.published ?? p.updated))!;
+    if (post.account.owner == null) {
       for (const choice of choices) {
         await fedCtx.sendActivity(
           owner,
           [
             {
-              id: new URL(poll.post.account.iri),
-              inboxId: new URL(poll.post.account.inboxUrl),
+              id: new URL(post.account.iri),
+              inboxId: new URL(post.account.inboxUrl),
             },
           ],
           new Create({
@@ -164,13 +167,13 @@ app.post(
               owner.account.iri,
             ),
             actor: new URL(owner.account.iri),
-            to: new URL(poll.post.account.iri),
+            to: new URL(post.account.iri),
             object: new Note({
               id: new URL(`#votes/${poll.id}/${choice}`, owner.account.iri),
               name: poll.options[choice].title,
               attribution: new URL(owner.account.iri),
-              replyTarget: new URL(poll.post.iri),
-              to: new URL(poll.post.account.iri),
+              replyTarget: new URL(post.iri),
+              to: new URL(post.account.iri),
             }),
           }),
           {
@@ -180,7 +183,7 @@ app.post(
       }
     } else {
       await fedCtx.sendActivity(
-        poll.post.account.owner,
+        post.account.owner,
         poll.votes.map((v) => ({
           id: new URL(v.account.iri),
           inboxId: new URL(v.account.inboxUrl),
@@ -191,7 +194,7 @@ app.post(
                   sharedInbox: new URL(v.account.sharedInboxUrl),
                 },
         })),
-        toUpdate({ ...poll.post, poll }, fedCtx),
+        toUpdate({ ...post, poll }, fedCtx),
         { excludeBaseUris: [new URL(c.req.url)] },
       );
     }

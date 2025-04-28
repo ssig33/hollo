@@ -489,11 +489,8 @@ export const polls = pgTable("polls", {
 export type Poll = typeof polls.$inferSelect;
 export type NewPoll = typeof polls.$inferInsert;
 
-export const pollRelations = relations(polls, ({ one, many }) => ({
-  post: one(posts, {
-    fields: [polls.id],
-    references: [posts.pollId],
-  }),
+export const pollRelations = relations(polls, ({ many }) => ({
+  posts: many(posts),
   options: many(pollOptions),
   votes: many(pollVotes),
 }));
