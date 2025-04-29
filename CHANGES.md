@@ -45,7 +45,7 @@ To be released.
 
  -  Increased the maximum character limit for posts from 4,096 to 10,000 characters.
 
- -  Upgraded Fedify to 1.5.0 and *@fedify/postgres* to 0.3.0.
+ -  Upgraded Fedify to 1.5.1 and *@fedify/postgres* to 0.3.0.
 
 [*Colors* section]: https://picocss.com/docs/colors
 [#50]: https://github.com/fedify-dev/hollo/issues/50
