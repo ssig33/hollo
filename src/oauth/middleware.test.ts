@@ -12,12 +12,12 @@ import {
   getApplication,
 } from "../../tests/helpers/oauth";
 import { createClientCredential } from "./helpers";
-import { type Variables, tokenRequired } from "./middleware";
+import { type Variables, scopeRequired, tokenRequired } from "./middleware";
 
-describe("OAuth / Middleware", () => {
+describe("OAuth / Middlewar / tokenRequired", () => {
   const app = new Hono<{ Variables: Variables }>();
 
-  app.get("/endpoint", tokenRequired, (c) => {
+  app.get("/tokenRequired", tokenRequired, (c) => {
     const token = c.get("token");
     const header = c.req.header("Authorization");
     return c.json({ ...token, header });
@@ -47,7 +47,7 @@ describe("OAuth / Middleware", () => {
         "read:accounts",
       ]);
 
-      const response = await app.request("/endpoint", {
+      const response = await app.request("/tokenRequired", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${clientCredential.token}`,
@@ -76,7 +76,7 @@ describe("OAuth / Middleware", () => {
       "read:accounts",
     ]);
 
-    const response = await app.request("/endpoint", {
+    const response = await app.request("/tokenRequired", {
       method: "GET",
       headers: {
         Authorization: accessToken.authorizationHeader,
@@ -100,7 +100,7 @@ describe("OAuth / Middleware", () => {
     "Returns an error if the client credentials token is not valid",
     { plan: 3 },
     async (t: TestContext) => {
-      const response = await app.request("/endpoint", {
+      const response = await app.request("/tokenRequired", {
         method: "GET",
         headers: {
           // Forces the client credentials code path:
@@ -121,7 +121,7 @@ describe("OAuth / Middleware", () => {
     "Returns an error if the access token is not valid",
     { plan: 3 },
     async (t: TestContext) => {
-      const response = await app.request("/endpoint", {
+      const response = await app.request("/tokenRequired", {
         method: "GET",
         headers: {
           // Forces the Access Token code path:
@@ -142,7 +142,7 @@ describe("OAuth / Middleware", () => {
     "Returns an error if Authorization header is not Bearer type",
     { plan: 3 },
     async (t: TestContext) => {
-      const response = await app.request("/endpoint", {
+      const response = await app.request("/tokenRequired", {
         method: "GET",
         headers: {
           Authorization: "Foo bar",
@@ -162,7 +162,7 @@ describe("OAuth / Middleware", () => {
     "Returns an error if Authorization header is not present",
     { plan: 3 },
     async (t: TestContext) => {
-      const response = await app.request("/endpoint", {
+      const response = await app.request("/tokenRequired", {
         method: "GET",
         headers: {
           /* deliberately no Authorization header */
@@ -175,6 +175,133 @@ describe("OAuth / Middleware", () => {
       const json = await response.json();
 
       t.assert.equal(json.error, "unauthorized");
+    },
+  );
+});
+
+describe("OAuth / Middlewar / scopeRequired", () => {
+  const app = new Hono<{ Variables: Variables }>();
+
+  app.get("/read", tokenRequired, scopeRequired(["read"]), (c) => {
+    const token = c.get("token");
+    const header = c.req.header("Authorization");
+    return c.json({ ...token, header });
+  });
+
+  app.get(
+    "/read-blocks",
+    tokenRequired,
+    scopeRequired(["read:blocks"]),
+    (c) => {
+      const token = c.get("token");
+      const header = c.req.header("Authorization");
+      return c.json({ ...token, header });
+    },
+  );
+
+  app.get("/follow", tokenRequired, scopeRequired(["follow"]), (c) => {
+    const token = c.get("token");
+    const header = c.req.header("Authorization");
+    return c.json({ ...token, header });
+  });
+
+  afterEach(async () => {
+    await cleanDatabase();
+  });
+
+  it("handles requiring read scope", { plan: 2 }, async (t: TestContext) => {
+    const client = await createOAuthApplication({
+      scopes: ["read"],
+    });
+    const application = await getApplication(client);
+
+    const clientCredential = await createClientCredential(application, [
+      "read",
+    ]);
+
+    const response = await app.request("/read", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${clientCredential.token}`,
+      },
+    });
+
+    t.assert.equal(response.status, 200, "Should return 200");
+    t.assert.equal(response.headers.get("content-type"), "application/json");
+  });
+
+  it(
+    "handles requiring read:blocks scope",
+    { plan: 2 },
+    async (t: TestContext) => {
+      const client = await createOAuthApplication({
+        scopes: ["read:blocks"],
+      });
+      const application = await getApplication(client);
+
+      const clientCredential = await createClientCredential(application, [
+        "read:blocks",
+      ]);
+
+      const response = await app.request("/read-blocks", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${clientCredential.token}`,
+        },
+      });
+
+      t.assert.equal(response.status, 200, "Should return 200");
+      t.assert.equal(response.headers.get("content-type"), "application/json");
+    },
+  );
+
+  it(
+    "handles requiring read:blocks scope when using read scope",
+    { plan: 2 },
+    async (t: TestContext) => {
+      const client = await createOAuthApplication({
+        scopes: ["read"],
+      });
+      const application = await getApplication(client);
+
+      const clientCredential = await createClientCredential(application, [
+        "read",
+      ]);
+
+      const response = await app.request("/read-blocks", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${clientCredential.token}`,
+        },
+      });
+
+      t.assert.equal(response.status, 200, "Should return 200");
+      t.assert.equal(response.headers.get("content-type"), "application/json");
+    },
+  );
+
+  it(
+    "handles requiring read:blocks scope when using follow scope",
+    { plan: 2 },
+    async (t: TestContext) => {
+      const client = await createOAuthApplication({
+        scopes: ["follow"],
+      });
+      const application = await getApplication(client);
+
+      const clientCredential = await createClientCredential(application, [
+        "follow",
+      ]);
+
+      const response = await app.request("/read-blocks", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${clientCredential.token}`,
+        },
+      });
+
+      t.assert.equal(response.status, 200, "Should return 200");
+      t.assert.equal(response.headers.get("content-type"), "application/json");
     },
   );
 });
