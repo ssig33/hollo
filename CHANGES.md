@@ -15,6 +15,11 @@ To be released.
      -  Deprecated `FS_ASSET_PATH` in favor of `FS_STORAGE_PATH`.
      -  Deprecated `ASSET_URL_BASE` in favor of `STORAGE_URL_BASE`.
 
+ -  Implemented OAuth 2.0 Authorization Code flow with support for access grants.
+    This improves the security of the OAuth authorization process by separating
+    the authorization code from the access token issuance.
+    [[#130] by Emelia Smith]
+
  -  Hollo now requires the `SECRET_KEY` environment variable to be at least 44
     characters long.  This change ensures sufficient entropy for cryptographic
     operations.  [[#126] by Emelia Smith]
@@ -57,6 +62,7 @@ To be released.
 [#121]: https://github.com/fedify-dev/hollo/pull/121
 [#122]: https://github.com/fedify-dev/hollo/pull/122
 [#126]: https://github.com/fedify-dev/hollo/pull/126
+[#130]: https://github.com/fedify-dev/hollo/pull/130
 [#136]: https://github.com/fedify-dev/hollo/issues/136
 [#137]: https://github.com/fedify-dev/hollo/pull/137
 

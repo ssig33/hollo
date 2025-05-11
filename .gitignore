@@ -5,3 +5,5 @@ fedify-hollo-*.tgz
 node_modules/
 tmp/
 mise.local.toml
+
+**/.claude/settings.local.json
