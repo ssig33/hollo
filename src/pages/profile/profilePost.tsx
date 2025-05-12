@@ -193,6 +193,9 @@ function PostPage({ post, accountOwner }: PostPageProps) {
       description={post.summary ?? post.content}
       imageUrl={post.account.avatarUrl}
       url={post.url ?? post.iri}
+      links={[
+        { rel: "alternate", type: "application/activity+json", href: post.iri },
+      ]}
       themeColor={accountOwner.themeColor}
     >
       <PostView post={post} />
