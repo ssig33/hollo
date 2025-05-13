@@ -72,7 +72,7 @@ jobs:
             org.opencontainers.image.url=https://docs.hollo.social/
             org.opencontainers.image.source=https://github.com/fedify-dev/hollo
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.licenses=AGPL-3.0-only
+            org.opencontainers.image.licenses=AGPL-3.0-or-later
             org.opencontainers.image.version=${{ steps.version.outputs.value }}-dev.${{ github.run_number }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:build-cache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:build-cache,mode=max
@@ -94,7 +94,7 @@ jobs:
             org.opencontainers.image.url=https://docs.hollo.social/
             org.opencontainers.image.source=https://github.com/fedify-dev/hollo
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.licenses=AGPL-3.0-only
+            org.opencontainers.image.licenses=AGPL-3.0-or-later
             org.opencontainers.image.version=${{ steps.version.outputs.value }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:build-cache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:build-cache,mode=max
