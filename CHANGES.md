@@ -52,6 +52,8 @@ To be released.
 
  -  Upgraded Fedify to 1.5.1 and *@fedify/postgres* to 0.3.0.
 
+ -  The minimum required version of Node.js is now 24.0.0.
+
 [*Colors* section]: https://picocss.com/docs/colors
 [#50]: https://github.com/fedify-dev/hollo/issues/50
 [#110]: https://github.com/fedify-dev/hollo/pull/110
