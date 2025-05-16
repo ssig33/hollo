@@ -1,11 +1,11 @@
-FROM node:22
+FROM node:24
 
 LABEL org.opencontainers.image.title="Hollo"
 LABEL org.opencontainers.image.description="Federated single-user \
 microblogging software"
 LABEL org.opencontainers.image.url="https://docs.hollo.social/"
 LABEL org.opencontainers.image.source="https://github.com/fedify-dev/hollo"
-LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
+LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
 
 RUN apt update && apt install -y libstdc++6 ffmpeg jq
 RUN npm install -g pnpm

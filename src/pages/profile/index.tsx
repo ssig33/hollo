@@ -270,6 +270,11 @@ function ProfilePage({
       imageUrl={accountOwner.account.avatarUrl}
       links={[
         { rel: "alternate", type: "application/atom+xml", href: atomUrl },
+        {
+          rel: "alternate",
+          type: "application/activity+json",
+          href: `/@${accountOwner.handle}`,
+        },
       ]}
       themeColor={accountOwner.themeColor}
     >

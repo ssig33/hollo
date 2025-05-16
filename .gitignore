@@ -7,3 +7,5 @@ tmp/
 mise.local.toml
 .envrc
 my-compose.yml
+
+**/.claude/settings.local.json

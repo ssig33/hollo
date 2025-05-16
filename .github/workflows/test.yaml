@@ -23,7 +23,7 @@ jobs:
           run_install: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 23
+          node-version: 24
           cache: pnpm
       - run: pnpm install
       - run: pnpm run check:ci
@@ -38,7 +38,7 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_DB: hollo_test
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U ${POSTGRES_USER}"
           --health-interval 10ms
           --health-timeout 3s
           --health-retries 50
@@ -68,7 +68,7 @@ jobs:
           run_install: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 23
+          node-version: 24
           cache: pnpm
       - run: pnpm install
       - name: Run the database migrations

@@ -15,6 +15,11 @@ To be released.
      -  Deprecated `FS_ASSET_PATH` in favor of `FS_STORAGE_PATH`.
      -  Deprecated `ASSET_URL_BASE` in favor of `STORAGE_URL_BASE`.
 
+ -  Implemented OAuth 2.0 Authorization Code flow with support for access grants.
+    This improves the security of the OAuth authorization process by separating
+    the authorization code from the access token issuance.
+    [[#130] by Emelia Smith]
+
  -  Hollo now requires the `SECRET_KEY` environment variable to be at least 44
     characters long.  This change ensures sufficient entropy for cryptographic
     operations.  [[#126] by Emelia Smith]
@@ -45,7 +50,9 @@ To be released.
 
  -  Increased the maximum character limit for posts from 4,096 to 10,000 characters.
 
- -  Upgraded Fedify to 1.5.0 and *@fedify/postgres* to 0.3.0.
+ -  Upgraded Fedify to 1.5.1 and *@fedify/postgres* to 0.3.0.
+
+ -  The minimum required version of Node.js is now 24.0.0.
 
 [*Colors* section]: https://picocss.com/docs/colors
 [#50]: https://github.com/fedify-dev/hollo/issues/50
@@ -57,8 +64,22 @@ To be released.
 [#121]: https://github.com/fedify-dev/hollo/pull/121
 [#122]: https://github.com/fedify-dev/hollo/pull/122
 [#126]: https://github.com/fedify-dev/hollo/pull/126
+[#130]: https://github.com/fedify-dev/hollo/pull/130
 [#136]: https://github.com/fedify-dev/hollo/issues/136
 [#137]: https://github.com/fedify-dev/hollo/pull/137
+
+
+Version 0.5.6
+-------------
+
+Released on April 29, 2025.
+
+ -  Fixed a bug where voting to a poll which had been shared (boosted) had not
+    been sent to the correct recipient.  [[#142]]
+
+ -  Upgrade Fedify to 1.4.10.
+
+[#142]: https://github.com/fedify-dev/hollo/issues/142
 
 
 Version 0.5.5
