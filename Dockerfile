@@ -1,4 +1,4 @@
-FROM docker.io/node:23.4-alpine
+FROM node:22
 
 LABEL org.opencontainers.image.title="Hollo"
 LABEL org.opencontainers.image.description="Federated single-user \
@@ -7,7 +7,8 @@ LABEL org.opencontainers.image.url="https://docs.hollo.social/"
 LABEL org.opencontainers.image.source="https://github.com/fedify-dev/hollo"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
 
-RUN apk add --no-cache ffmpeg jq libstdc++ pnpm
+RUN apt update && apt install -y libstdc++6 ffmpeg jq
+RUN npm install -g pnpm
 
 COPY pnpm-lock.yaml package.json /app/
 WORKDIR /app/
