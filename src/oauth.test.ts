@@ -59,6 +59,7 @@ describe("OAuth", () => {
       ]);
       t.assert.deepStrictEqual(metadata.token_endpoint_auth_methods_supported, [
         "client_secret_post",
+        "client_secret_basic",
       ]);
 
       t.assert.ok(

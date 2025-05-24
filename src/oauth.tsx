@@ -447,8 +447,9 @@ export async function oauthAuthorizationServer(c: Context) {
     grant_types_supported: ["authorization_code", "client_credentials"],
     token_endpoint_auth_methods_supported: [
       "client_secret_post",
-      // Not supported by Hollo:
-      // "client_secret_basic",
+      "client_secret_basic",
+      // Not supported until we support public clients:
+      // "none",
     ],
     app_registration_endpoint: new URL("/api/v1/apps", url).href,
   });
