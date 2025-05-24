@@ -3,6 +3,7 @@ import type { TestContext } from "node:test";
 
 import { cleanDatabase } from "../../../tests/helpers";
 import {
+  bearerAuthorization,
   createAccount,
   createOAuthApplication,
   getAccessToken,
@@ -38,7 +39,7 @@ describe("/api/v1/accounts/", () => {
         {
           method: "GET",
           headers: {
-            Authorization: accessToken.authorizationHeader,
+            authorization: bearerAuthorization(accessToken),
           },
         },
       );
@@ -65,7 +66,7 @@ describe("/api/v1/accounts/", () => {
         {
           method: "GET",
           headers: {
-            Authorization: accessToken.authorizationHeader,
+            authorization: bearerAuthorization(accessToken),
           },
         },
       );

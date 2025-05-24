@@ -74,13 +74,18 @@ app.post("/", async (c) => {
     crypto.getRandomValues(new Uint8Array(32)).buffer as ArrayBuffer,
     true,
   );
+
+  const uniqueScopes = [
+    ...new Set(form.scopes ?? (["read"] satisfies Scope[])),
+  ];
+
   const apps = await db
     .insert(applications)
     .values({
       id: crypto.randomUUID(),
       name: form.client_name ?? "",
       redirectUris: form.redirect_uris ?? [],
-      scopes: form.scopes ?? (["read"] satisfies Scope[]),
+      scopes: uniqueScopes,
       website: form.website,
       clientId,
       clientSecret,
@@ -88,6 +93,9 @@ app.post("/", async (c) => {
       confidential: true,
     } satisfies NewApplication)
     .returning();
+
+  // FIXME: theoretically we could fail to insert the application, in which case
+  // `app` would be undefined?
   const app = apps[0];
 
   const credentialApplication = {

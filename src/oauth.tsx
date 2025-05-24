@@ -37,6 +37,7 @@ const logger = getLogger(["hollo", "oauth"]);
 
 const app = new Hono<{ Variables: ClientAuthenticationVariables }>();
 
+/* c8 ignore start */
 app.get(
   "/authorize",
   zValidator(
@@ -246,6 +247,8 @@ function AuthorizationCodePage(props: AuthorizationCodePageProps) {
   );
 }
 
+/* c8 ignore stop */
+
 const INVALID_GRANT_ERROR_DESCRIPTION =
   "The provided authorization code is invalid, expired, revoked, " +
   "does not match the redirection URI used in the authorization " +
@@ -323,6 +326,8 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
             );
           }
 
+          /* c8 ignore start */
+          // TODO: The test for this requires time travel
           const notAfter =
             accessGrant.created.valueOf() + accessGrant.expiresIn;
           if (Date.now() > notAfter) {
@@ -334,6 +339,7 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
               400,
             );
           }
+          /* c8 ignore stop */
 
           if (accessGrant.redirectUri !== form.redirect_uri) {
             return c.json(
@@ -356,6 +362,8 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
           // create the access token
           const accessToken = await createAccessToken(accessGrant, tx);
 
+          /* c8 ignore start */
+          // TODO: This scenario requires an insert to the database failing, so not sure how to test:
           if (accessToken === undefined) {
             return c.json(
               {
@@ -366,6 +374,7 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
               500,
             );
           }
+          /* c8 ignore stop */
 
           return c.json(
             {
@@ -383,6 +392,8 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
           deferrable: true,
         },
       )
+      /* c8 ignore start */
+      /* I'm not sure how we'd ever test this scenario */
       .catch((err) => {
         logger.error("An unknown error occurred", err);
 
@@ -395,6 +406,7 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
           500,
         );
       });
+    /* c8 ignore stop */
   }
 
   if (form.grant_type === "client_credentials") {
