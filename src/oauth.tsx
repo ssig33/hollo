@@ -498,8 +498,7 @@ export async function oauthAuthorizationServer(c: Context) {
     issuer: new URL("/", url).href,
     authorization_endpoint: new URL("/oauth/authorize", url).href,
     token_endpoint: new URL("/oauth/token", url).href,
-    // Not yet supported by Hollo:
-    // "revocation_endpoint": "",
+    revocation_endpoint: new URL("/oauth/revoke", url).href,
     scopes_supported: scopeEnum.enumValues,
     response_types_supported: ["code"],
     response_modes_supported: ["query"],

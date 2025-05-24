@@ -24,7 +24,7 @@ import { createAccessGrant } from "./oauth/helpers";
 describe("OAuth", () => {
   it(
     "Can GET /.well-known/oauth-authorization-server",
-    { plan: 10 },
+    { plan: 11 },
     async (t: TestContext) => {
       // We use the full URL in this test as the route calculates values based
       // on the Host header
@@ -47,6 +47,10 @@ describe("OAuth", () => {
       t.assert.equal(
         metadata.token_endpoint,
         "http://localhost:3000/oauth/token",
+      );
+      t.assert.equal(
+        metadata.revocation_endpoint,
+        "http://localhost:3000/oauth/revoke",
       );
       // Non-standard, mastodon extension:
       t.assert.equal(
