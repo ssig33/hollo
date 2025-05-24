@@ -3,6 +3,7 @@ import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../db";
+import { requestBody } from "../../helpers";
 import { type Variables, tokenRequired } from "../../oauth/middleware";
 import {
   type NewApplication,
@@ -15,7 +16,7 @@ const logger = getLogger(["hollo", "api", "v1", "apps"]);
 
 const app = new Hono<{ Variables: Variables }>();
 
-const applicationSchema = z.object({
+const applicationSchema = z.strictObject({
   client_name: z.string().optional(),
   redirect_uris: z
     .union([z.string().trim(), z.array(z.string().trim())])
@@ -56,36 +57,15 @@ const applicationSchema = z.object({
 });
 
 app.post("/", async (c) => {
-  let form: z.infer<typeof applicationSchema>;
-  const contentType = c.req.header("Content-Type");
-  if (
-    contentType === "application/json" ||
-    contentType?.match(/^application\/json\s*;/)
-  ) {
-    const json = await c.req.json();
-    // FIXME: this currently parses without a body
-    const result = await applicationSchema.safeParseAsync(json);
-    if (!result.success) {
-      logger.debug("Invalid request: {error}", { error: result.error });
-      return c.json({ error: "Invalid request", zod_error: result.error }, 400);
-    }
-    form = result.data;
-  } else {
-    const formData = await c.req.parseBody();
-    // FIXME: this currently parses without a body
-    const result = await applicationSchema.safeParseAsync(formData);
-    if (!result.success) {
-      logger.debug("Invalid request: {error}", { error: result.error });
-      return c.json({ error: "Invalid request", zod_error: result.error }, 400);
-    }
-    form = result.data;
+  const result = await requestBody(c.req, applicationSchema);
+
+  if (!result.success) {
+    logger.debug("Invalid request: {error}", { error: result.error });
+    return c.json({ error: "invalid_request", zod_error: result.error }, 422);
   }
 
-  console.log({ form });
+  const form = result.data;
 
-  if (form == null) {
-    return c.json({ error: "Invalid request" }, 400);
-  }
   const clientId = base64.fromArrayBuffer(
     crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer,
     true,
@@ -109,7 +89,8 @@ app.post("/", async (c) => {
     } satisfies NewApplication)
     .returning();
   const app = apps[0];
-  const result = {
+
+  const credentialApplication = {
     id: app.id,
     name: app.name,
     website: app.website,
@@ -121,8 +102,9 @@ app.post("/", async (c) => {
     // vapid_key is deprecated, it should be fetched from /api/v1/instance instead
     vapid_key: "",
   };
-  logger.debug("Created application: {app}", { app: result });
-  return c.json(result);
+
+  logger.debug("Created application: {app}", { app: credentialApplication });
+  return c.json(credentialApplication);
 });
 
 app.get("/verify_credentials", tokenRequired, async (c) => {

@@ -1,7 +1,8 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import { auth } from "hono/utils/basic-auth";
 import { db } from "../db.ts";
+import { requestBody } from "../helpers.ts";
 import {
   type AccessToken,
   type Account,
@@ -40,14 +41,14 @@ type ClientCredentials =
     };
 
 const clientCredentialsSchema = z.object({
-  client_id: z.string(),
-  client_secret: z.string(),
+  client_id: z.string().optional(),
+  client_secret: z.string().optional(),
 });
 
 export const clientAuthentication = createMiddleware<{
   Variables: ClientAuthenticationVariables;
 }>(async (c, next) => {
-  let clientCredentials: ClientCredentials[] = [];
+  const clientCredentials: ClientCredentials[] = [];
 
   // client authentication: client_secret_basic
   if (c.req.header("Authorization")?.trim().startsWith("Basic ")) {
@@ -63,10 +64,9 @@ export const clientAuthentication = createMiddleware<{
 
   // client authentication: client_secret_post
   if (c.req.method === "POST") {
-    const body = await c.req.parseBody();
-    const result = await clientCredentialsSchema.safeParse(body);
+    const result = await requestBody(c.req, clientCredentialsSchema);
 
-    if (result.success) {
+    if (result.success && result.data.client_id && result.data.client_secret) {
       clientCredentials.push({
         authentication: "client_secret_post",
         client_id: result.data.client_id,

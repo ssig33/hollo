@@ -7,6 +7,7 @@ import { cors } from "hono/cors";
 import { z } from "zod";
 import { Layout } from "./components/Layout";
 import { db } from "./db";
+import { requestBody } from "./helpers";
 import { loginRequired } from "./login";
 import { OOB_REDIRECT_URI } from "./oauth/constants";
 import {
@@ -249,60 +250,51 @@ const INVALID_GRANT_ERROR_DESCRIPTION =
   "does not match the redirection URI used in the authorization " +
   "request, or was issued to another client.";
 
-const tokenRequestSchema = z.object({
-  grant_type: z.enum(["authorization_code", "client_credentials"]),
-  redirect_uri: z.string().url().optional(),
-  code: z.string().optional(),
-  scope: scopesSchema.optional(),
-});
+const tokenRequestSchema = z.discriminatedUnion("grant_type", [
+  z.strictObject({
+    grant_type: z.literal("client_credentials"),
+    scope: scopesSchema.optional(),
+    // client_id and client_secret are present but consumed by the
+    // clientAuthentication middleware:
+    client_id: z.string().optional(),
+    client_secret: z.string().optional(),
+  }),
+  z.strictObject({
+    grant_type: z.literal("authorization_code"),
+    redirect_uri: z.string().url(),
+    code: z.string(),
+    // client_id and client_secret are present but consumed by the
+    // clientAuthentication middleware:
+    client_id: z.string().optional(),
+    client_secret: z.string().optional(),
+  }),
+]);
 
 app.post("/token", cors(), clientAuthentication, async (c) => {
   const client = c.get("client");
+  const result = await requestBody(c.req, tokenRequestSchema);
 
-  let form: z.infer<typeof tokenRequestSchema>;
-  const contentType = c.req.header("Content-Type");
-  if (
-    contentType === "application/json" ||
-    contentType?.match(/^application\/json\s*;/)
-  ) {
-    const json = await c.req.json();
-    const result = await tokenRequestSchema.safeParseAsync(json);
-    if (!result.success) {
-      return c.json({ error: "invalid_request", zod_error: result.error }, 400);
+  if (!result.success) {
+    if (
+      result.error.errors.length === 1 &&
+      result.error.errors[0].code === "invalid_union_discriminator"
+    ) {
+      return c.json(
+        {
+          error: "unsupported_grant_type",
+          error_description:
+            "The authorization grant type is not supported by the authorization server.",
+        },
+        400,
+      );
     }
-    form = result.data;
-  } else {
-    const formData = await c.req.parseBody();
-    const result = await tokenRequestSchema.safeParseAsync(formData);
-    if (!result.success) {
-      return c.json({ error: "invalid_request", zod_error: result.error }, 400);
-    }
-    form = result.data;
+
+    return c.json({ error: "invalid_request", zod_error: result.error }, 400);
   }
 
+  const form = result.data;
   if (form.grant_type === "authorization_code") {
-    if (form.code === undefined) {
-      return c.json(
-        {
-          error: "invalid_request",
-          error_description: "The authorization code is required.",
-        },
-        400,
-      );
-    }
-
     const authorizationCode = form.code;
-
-    if (!form.redirect_uri) {
-      return c.json(
-        {
-          error: "invalid_request",
-          error_description:
-            "The authorization code grant flow requires a redirect URI.",
-        },
-        400,
-      );
-    }
 
     return await db
       .transaction(
@@ -405,28 +397,6 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
   }
 
   if (form.grant_type === "client_credentials") {
-    if (form.code) {
-      return c.json(
-        {
-          error: "invalid_request",
-          error_description:
-            "The client credentials grant flow does not accept a code parameter.",
-        },
-        400,
-      );
-    }
-
-    if (form.redirect_uri) {
-      return c.json(
-        {
-          error: "invalid_request",
-          error_description:
-            "The client credentials grant flow does not accept a redirect_uri parameter.",
-        },
-        400,
-      );
-    }
-
     // Public clients cannot use the client_credentials grant flow
     if (!client.confidential) {
       return c.json(
@@ -460,14 +430,6 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
     });
   }
 
-  return c.json(
-    {
-      error: "unsupported_grant_type",
-      error_description:
-        "The authorization grant type is not supported by the authorization server.",
-    },
-    400,
-  );
 });
 
 export async function oauthAuthorizationServer(c: Context) {
