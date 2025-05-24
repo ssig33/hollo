@@ -243,3 +243,13 @@ export async function getAccessGrant(
 
   return accessGrant;
 }
+
+export async function findAccessToken(
+  token: string,
+): Promise<Schema.AccessToken | undefined> {
+  const accessToken = await db.query.accessTokens.findFirst({
+    where: eq(Schema.accessTokens.code, token),
+  });
+
+  return accessToken;
+}

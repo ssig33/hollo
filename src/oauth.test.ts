@@ -10,6 +10,8 @@ import {
   createAccount,
   createOAuthApplication,
   getAccessGrant,
+  findAccessToken,
+  getAccessToken,
   getApplication,
   getLastAccessGrant,
   getLastAccessToken,
@@ -509,6 +511,171 @@ describe("OAuth / POST /oauth/token (Public Client)", () => {
       t.assert.equal(response.headers.get("content-type"), "application/json");
 
       t.assert.equal(responseBody.error, "unauthorized_client");
+    },
+  );
+});
+
+describe("OAuth / POST /oauth/revoke", () => {
+  let account: Awaited<ReturnType<typeof createAccount>>;
+  let client: Awaited<ReturnType<typeof createOAuthApplication>>;
+  let application: Schema.Application;
+  let wrongClient: Awaited<ReturnType<typeof createOAuthApplication>>;
+  let wrongApplication: Schema.Application;
+
+  beforeEach(async () => {
+    account = await createAccount();
+    client = await createOAuthApplication({
+      scopes: ["read:accounts"],
+      redirectUris: [OOB_REDIRECT_URI],
+      confidential: true,
+    });
+    application = await getApplication(client);
+
+    wrongClient = await createOAuthApplication({
+      scopes: ["read:accounts"],
+      redirectUris: [OOB_REDIRECT_URI],
+      confidential: true,
+    });
+    wrongApplication = await getApplication(wrongClient);
+  });
+
+  afterEach(async () => {
+    await cleanDatabase();
+  });
+
+  it(
+    "can revoke an access token using client_secret_basic",
+    { plan: 4 },
+    async (t: TestContext) => {
+      const accessToken = await getAccessToken(client, account);
+      const body = new FormData();
+      body.set("token", accessToken.token);
+
+      const response = await app.request("/oauth/revoke", {
+        method: "POST",
+        headers: {
+          authorization: basicAuthorization(application),
+        },
+        body,
+      });
+
+      t.assert.equal(response.status, 200);
+      t.assert.equal(response.headers.get("content-type"), "application/json");
+      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+
+      const accessTokenAfterRevocation = await findAccessToken(
+        accessToken.token,
+      );
+
+      t.assert.equal(accessTokenAfterRevocation, undefined);
+    },
+  );
+
+  it(
+    "can revoke an access token using client_secret_post",
+    { plan: 4 },
+    async (t: TestContext) => {
+      const accessToken = await getAccessToken(client, account);
+      const body = new FormData();
+      body.set("token", accessToken.token);
+      body.set("client_id", application.clientId);
+      body.set("client_secret", application.clientSecret);
+
+      const response = await app.request("/oauth/revoke", {
+        method: "POST",
+        body,
+      });
+
+      t.assert.equal(response.status, 200);
+      t.assert.equal(response.headers.get("content-type"), "application/json");
+      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+
+      const accessTokenAfterRevocation = await findAccessToken(
+        accessToken.token,
+      );
+
+      t.assert.equal(accessTokenAfterRevocation, undefined);
+    },
+  );
+
+  it(
+    "cannot revoke an access token for a different client, but does not return any errors",
+    { plan: 4 },
+    async (t: TestContext) => {
+      const accessToken = await getAccessToken(client, account);
+      const body = new FormData();
+      body.set("token", accessToken.token);
+      body.set("client_id", wrongApplication.clientId);
+      body.set("client_secret", wrongApplication.clientSecret);
+
+      const response = await app.request("/oauth/revoke", {
+        method: "POST",
+        body,
+      });
+
+      t.assert.equal(response.status, 200);
+      t.assert.equal(response.headers.get("content-type"), "application/json");
+      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+
+      const accessTokenAfterRevocation = await findAccessToken(
+        accessToken.token,
+      );
+
+      t.assert.notEqual(accessTokenAfterRevocation, undefined);
+    },
+  );
+
+  it(
+    "cannot revoke a token using token_type_hint of refresh_token",
+    { plan: 5 },
+    async (t: TestContext) => {
+      const body = new FormData();
+      body.set("token", "123");
+      body.set("token_type_hint", "refresh_token");
+
+      const response = await app.request("/oauth/revoke", {
+        method: "POST",
+        headers: {
+          authorization: basicAuthorization(application),
+        },
+        body,
+      });
+
+      t.assert.equal(response.status, 400);
+      t.assert.equal(response.headers.get("content-type"), "application/json");
+      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+
+      const responseBody = await response.json();
+
+      t.assert.equal(typeof responseBody, "object");
+      t.assert.equal(responseBody.error, "unsupported_token_type");
+    },
+  );
+
+  it(
+    "cannot revoke a token without supplying the token parameter",
+    { plan: 5 },
+    async (t: TestContext) => {
+      const body = new FormData();
+      // explicitly doesn't have `token`
+      body.set("token_type_hint", "refresh_token");
+
+      const response = await app.request("/oauth/revoke", {
+        method: "POST",
+        headers: {
+          authorization: basicAuthorization(application),
+        },
+        body,
+      });
+
+      t.assert.equal(response.status, 400);
+      t.assert.equal(response.headers.get("content-type"), "application/json");
+      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+
+      const responseBody = await response.json();
+
+      t.assert.equal(typeof responseBody, "object");
+      t.assert.equal(responseBody.error, "invalid_request");
     },
   );
 });
