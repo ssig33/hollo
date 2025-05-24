@@ -1,12 +1,11 @@
 import type { HonoRequest } from "hono";
-import type { SafeParseReturnType, ZodType, ZodTypeDef, output } from "zod";
+import type z from "zod";
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export async function requestBody<T extends ZodType<any, ZodTypeDef, any>>(
+export async function requestBody<T extends z.ZodType = z.ZodTypeAny>(
   req: HonoRequest,
   schema: T,
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-): Promise<SafeParseReturnType<any, output<T>>> {
+  // biome-ignore lint/suspicious/noExplicitAny: Input type is `any` as it comes from the request
+): Promise<z.SafeParseReturnType<any, z.output<T>>> {
   const contentType = req.header("Content-Type");
   if (
     contentType === "application/json" ||
