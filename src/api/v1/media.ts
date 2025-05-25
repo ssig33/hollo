@@ -31,7 +31,7 @@ export async function postMedia(c: Context<{ Variables: Variables }>) {
   }
 
   const image = sharp(imageBytes).rotate();
-  const rmMetaImage = await image.toBuffer();
+  const rmMetaImage = await image.keepIccProfile().toBuffer();
   const fileMetadata = await sharp(rmMetaImage).metadata();
   const content = file.type.startsWith("video/") ? new Uint8Array(imageData) : new Uint8Array(rmMetaImage);
   
