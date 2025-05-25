@@ -48,7 +48,11 @@ To be released.
  -  The current version string is displayed at the bottom of the dashboard page.
     [[#136], [#137] by RangHo Lee]
 
- -  Increased the maximum character limit for posts from 4,096 to 10,000 characters.
+ -  Increased the maximum character limit for posts from 4,096 to 10,000
+    characters.
+
+ -  EXIF metadata of attached images are now stripped before storing them
+    to prevent privacy leaks.  [[#152] by NTSK]
 
  -  Upgraded Fedify to 1.5.1 and *@fedify/postgres* to 0.3.0.
 
@@ -67,6 +71,7 @@ To be released.
 [#130]: https://github.com/fedify-dev/hollo/pull/130
 [#136]: https://github.com/fedify-dev/hollo/issues/136
 [#137]: https://github.com/fedify-dev/hollo/pull/137
+[#152]: https://github.com/fedify-dev/hollo/pull/152
 
 
 Version 0.5.6
