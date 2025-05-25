@@ -78,7 +78,7 @@ export async function createAccessToken(
     })
     .returning();
 
-  /* c8 ignore start */
+  /* v8 ignore start */
   // This case is only possible if there's some sort of database error, which
   // can't really be tested, unless we mock drizzle somehow?
   if (result.length !== 1) {
@@ -92,7 +92,7 @@ export async function createAccessToken(
 
     return undefined;
   }
-  /* c8 ignore end */
+  /* v8 ignore end */
 
   return {
     token: result[0].code,
@@ -122,7 +122,7 @@ export async function createClientCredential(
     })
     .returning();
 
-  /* c8 ignore start */
+  /* v8 ignore start */
   // This case is only possible if there's some sort of database error, which
   // can't really be tested, unless we mock drizzle somehow?
   //
@@ -133,7 +133,7 @@ export async function createClientCredential(
       "We were unable to create a client credential access token at this time.",
     );
   }
-  /* c8 ignore end */
+  /* v8 ignore end */
 
   return {
     token: result[0].code,
