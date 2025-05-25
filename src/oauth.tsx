@@ -33,6 +33,8 @@ const logger = getLogger(["hollo", "oauth"]);
 
 const app = new Hono<{ Variables: ClientAuthenticationVariables }>();
 
+/* v8 ignore start */
+
 app.get(
   "/authorize",
   zValidator(
@@ -73,6 +75,8 @@ app.get(
     );
   },
 );
+
+/* v8 ignore stop */
 
 app.post(
   "/authorize",
@@ -223,8 +227,6 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
             );
           }
 
-          /* v8 ignore start */
-          // TODO: The test for this requires time travel
           const notAfter =
             accessGrant.created.valueOf() + accessGrant.expiresIn;
           if (Date.now() > notAfter) {
@@ -236,7 +238,6 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
               400,
             );
           }
-          /* v8 ignore stop */
 
           if (accessGrant.redirectUri !== form.redirect_uri) {
             return c.json(

@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import * as timekeeper from "timekeeper";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import app from "./index";
 import type * as Schema from "./schema";
@@ -286,7 +287,7 @@ describe.sequential("OAuth", () => {
     });
   });
 
-  describe.sequential("OAuth / POST /oauth/token (Confidential Client)", () => {
+  describe.sequential("POST /oauth/token (Confidential Client)", () => {
     let account: Awaited<ReturnType<typeof createAccount>>;
     let application: Schema.Application;
     let client: Awaited<ReturnType<typeof createOAuthApplication>>;
@@ -311,6 +312,7 @@ describe.sequential("OAuth", () => {
     });
 
     afterEach(async () => {
+      vi.useRealTimers();
       await cleanDatabase();
     });
 
@@ -527,10 +529,48 @@ describe.sequential("OAuth", () => {
       expect(responseBody.scope).toBe(lastAccessToken.scopes.join(" "));
     });
 
-    // This test case needs time travel, lines 332-339
-    it.skip(
-      "cannot exchange an access grant for an access token when the access grant has expired",
-    );
+    describe.sequential("expired access grants", () => {
+      beforeEach(() => {
+        timekeeper.freeze();
+      });
+
+      afterEach(() => {
+        timekeeper.reset();
+      });
+
+      it("cannot exchange an access grant for an access token when the access grant has expired", async () => {
+        expect.assertions(3);
+
+        const accessGrant = await createAccessGrant(
+          application.id,
+          account.id,
+          ["read:accounts"],
+          OOB_REDIRECT_URI,
+        );
+
+        timekeeper.travel(accessGrant.expiry.valueOf() + 1000);
+
+        const body = new FormData();
+        body.set("grant_type", "authorization_code");
+        body.set("client_id", application.clientId);
+        // client_secret is technically optional, but we don't support public clients yet:
+        body.set("client_secret", application.clientSecret);
+        body.set("redirect_uri", OOB_REDIRECT_URI);
+        body.set("code", accessGrant.code);
+
+        const response = await app.request("/oauth/token", {
+          method: "POST",
+          body,
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.headers.get("content-type")).toBe("application/json");
+
+        const responseBody = await response.json();
+
+        expect(responseBody.error).toBe("invalid_grant");
+      });
+    });
 
     it("cannot exchange an access grant for an access token when the redirect URI does not match", async () => {
       expect.assertions(3);
@@ -673,7 +713,7 @@ describe.sequential("OAuth", () => {
     });
   });
 
-  describe.sequential("OAuth / POST /oauth/token (Public Client)", () => {
+  describe.sequential("POST /oauth/token (Public Client)", () => {
     let application: Schema.Application;
     let client: Awaited<ReturnType<typeof createOAuthApplication>>;
     let account: Awaited<ReturnType<typeof createAccount>>;
@@ -754,7 +794,7 @@ describe.sequential("OAuth", () => {
     });
   });
 
-  describe.sequential("OAuth / POST /oauth/revoke", () => {
+  describe.sequential("POST /oauth/revoke", () => {
     let account: Awaited<ReturnType<typeof createAccount>>;
     let client: Awaited<ReturnType<typeof createOAuthApplication>>;
     let application: Schema.Application;

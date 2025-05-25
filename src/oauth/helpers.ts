@@ -5,16 +5,18 @@ import { lt } from "drizzle-orm";
 import db, { type Transaction } from "../db";
 import * as schema from "../schema";
 import type { Uuid } from "../uuid";
+import {
+  ACCESS_GRANT_DELETE_AFTER,
+  ACCESS_GRANT_EXPIRES_IN,
+  ACCESS_GRANT_SIZE,
+  ACCESS_TOKEN_SIZE,
+} from "./constants";
 
 const logger = getLogger(["hollo", "oauth"]);
 
-const ACCESS_GRANT_SIZE = 64;
-const ACCESS_TOKEN_SIZE = 64;
-const TEN_MINUTES = 10 * 60 * 1000;
-const ONE_DAY = 3600 * 24 * 1000;
-
 export type AccessGrant = {
   code: string;
+  expiry: Date;
 };
 
 export async function createAccessGrant(
@@ -32,22 +34,43 @@ export async function createAccessGrant(
   try {
     await db
       .delete(schema.accessGrants)
-      .where(lt(schema.accessGrants.revoked, new Date(Date.now() - ONE_DAY)));
+      .where(
+        lt(
+          schema.accessGrants.revoked,
+          new Date(Date.now() - ACCESS_GRANT_DELETE_AFTER),
+        ),
+      );
   } catch (err) {
     logger.warn("Failed to clean up expired access grants", { err });
   }
 
-  await db.insert(schema.accessGrants).values({
-    id: crypto.randomUUID(),
-    code,
-    applicationId: application_id,
-    resourceOwnerId: account_id,
-    scopes: scopes,
-    redirectUri: redirect_uri,
-    expiresIn: TEN_MINUTES,
-  } satisfies schema.NewAccessGrant);
+  const accessGrant = await db
+    .insert(schema.accessGrants)
+    .values({
+      id: crypto.randomUUID(),
+      code,
+      applicationId: application_id,
+      resourceOwnerId: account_id,
+      scopes: scopes,
+      redirectUri: redirect_uri,
+      expiresIn: ACCESS_GRANT_EXPIRES_IN,
+    } satisfies schema.NewAccessGrant)
+    .returning({
+      code: schema.accessGrants.code,
+      created: schema.accessGrants.created,
+      expiresIn: schema.accessGrants.expiresIn,
+    });
 
-  return { code };
+  if (accessGrant.length !== 1) {
+    throw new Error("Error creating access grant");
+  }
+
+  return {
+    code: accessGrant[0].code,
+    expiry: new Date(
+      accessGrant[0].created.valueOf() + accessGrant[0].expiresIn,
+    ),
+  };
 }
 
 export type AccessToken = {
