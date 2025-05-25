@@ -11,7 +11,7 @@ export default defineConfig(() => ({
   test: {
     env: env,
     reporters: process.env.GITHUB_ACTIONS
-      ? ["basic", "github-actions"]
+      ? ["default", "github-actions"]
       : ["default"],
     fileParallelism: false,
     expect: {
