@@ -1,12 +1,13 @@
 import { zValidator } from "@hono/zod-validator";
 import { getLogger } from "@logtape/logtape";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { escape } from "es-toolkit";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { z } from "zod";
 import { Layout } from "./components/Layout";
 import { db } from "./db";
+import { requestBody } from "./helpers";
 import { loginRequired } from "./login";
 import { OOB_REDIRECT_URI } from "./oauth/constants";
 import {
@@ -14,7 +15,10 @@ import {
   createAccessToken,
   createClientCredential,
 } from "./oauth/helpers";
-import type { Variables } from "./oauth/middleware";
+import {
+  type ClientAuthenticationVariables,
+  clientAuthentication,
+} from "./oauth/middleware";
 import { scopesSchema } from "./oauth/validators";
 import {
   type Account,
@@ -22,6 +26,7 @@ import {
   type Application,
   type Scope,
   accessGrants,
+  accessTokens,
   applications,
   scopeEnum,
 } from "./schema";
@@ -30,8 +35,9 @@ import { uuid } from "./uuid";
 
 const logger = getLogger(["hollo", "oauth"]);
 
-const app = new Hono<{ Variables: Variables }>();
+const app = new Hono<{ Variables: ClientAuthenticationVariables }>();
 
+/* c8 ignore start */
 app.get(
   "/authorize",
   zValidator(
@@ -241,81 +247,58 @@ function AuthorizationCodePage(props: AuthorizationCodePageProps) {
   );
 }
 
+/* c8 ignore stop */
+
 const INVALID_GRANT_ERROR_DESCRIPTION =
   "The provided authorization code is invalid, expired, revoked, " +
   "does not match the redirection URI used in the authorization " +
   "request, or was issued to another client.";
 
-const tokenRequestSchema = z.object({
-  grant_type: z.enum(["authorization_code", "client_credentials"]),
-  client_id: z.string(),
-  client_secret: z.string(),
-  redirect_uri: z.string().url().optional(),
-  code: z.string().optional(),
-  scope: scopesSchema.optional(),
-});
+const tokenRequestSchema = z.discriminatedUnion("grant_type", [
+  z.strictObject({
+    grant_type: z.literal("client_credentials"),
+    scope: scopesSchema.optional(),
+    // client_id and client_secret are present but consumed by the
+    // clientAuthentication middleware:
+    client_id: z.string().optional(),
+    client_secret: z.string().optional(),
+  }),
+  z.strictObject({
+    grant_type: z.literal("authorization_code"),
+    redirect_uri: z.string().url(),
+    code: z.string(),
+    // client_id and client_secret are present but consumed by the
+    // clientAuthentication middleware:
+    client_id: z.string().optional(),
+    client_secret: z.string().optional(),
+  }),
+]);
 
-app.post("/token", cors(), async (c) => {
-  let form: z.infer<typeof tokenRequestSchema>;
-  const contentType = c.req.header("Content-Type");
-  if (
-    contentType === "application/json" ||
-    contentType?.match(/^application\/json\s*;/)
-  ) {
-    const json = await c.req.json();
-    const result = await tokenRequestSchema.safeParseAsync(json);
-    if (!result.success) {
-      return c.json({ error: "Invalid request", zod_error: result.error }, 400);
-    }
-    form = result.data;
-  } else {
-    const formData = await c.req.parseBody();
-    const result = await tokenRequestSchema.safeParseAsync(formData);
-    if (!result.success) {
-      return c.json({ error: "Invalid request", zod_error: result.error }, 400);
-    }
-    form = result.data;
-  }
+app.post("/token", cors(), clientAuthentication, async (c) => {
+  const client = c.get("client");
+  const result = await requestBody(c.req, tokenRequestSchema);
 
-  const application = await db.query.applications.findFirst({
-    where: eq(applications.clientId, form.client_id),
-  });
-  if (application == null || application.clientSecret !== form.client_secret) {
-    return c.json(
-      {
-        error: "invalid_client",
-        error_description:
-          "Client authentication failed due to unknown client, " +
-          "no client authentication included, or unsupported authentication " +
-          "method.",
-      },
-      401,
-    );
-  }
-
-  if (form.grant_type === "authorization_code") {
-    if (form.code === undefined) {
+  if (!result.success) {
+    if (
+      result.error.errors.length === 1 &&
+      result.error.errors[0].code === "invalid_union_discriminator"
+    ) {
       return c.json(
         {
-          error: "invalid_request",
-          error_description: "The authorization code is required.",
-        },
-        400,
-      );
-    }
-
-    const authorizationCode = form.code;
-
-    if (!form.redirect_uri) {
-      return c.json(
-        {
-          error: "invalid_request",
+          error: "unsupported_grant_type",
           error_description:
-            "The authorization code grant flow requires a redirect URI.",
+            "The authorization grant type is not supported by the authorization server.",
         },
         400,
       );
     }
+
+    return c.json({ error: "invalid_request", zod_error: result.error }, 400);
+  }
+
+  const form = result.data;
+  if (form.grant_type === "authorization_code") {
+    const authorizationCode = form.code;
 
     return await db
       .transaction(
@@ -331,7 +314,7 @@ app.post("/token", cors(), async (c) => {
 
           if (
             accessGrant === undefined ||
-            accessGrant.applicationId !== application.id ||
+            accessGrant.applicationId !== client.id ||
             accessGrant?.revoked !== null
           ) {
             return c.json(
@@ -343,6 +326,8 @@ app.post("/token", cors(), async (c) => {
             );
           }
 
+          /* c8 ignore start */
+          // TODO: The test for this requires time travel
           const notAfter =
             accessGrant.created.valueOf() + accessGrant.expiresIn;
           if (Date.now() > notAfter) {
@@ -354,6 +339,7 @@ app.post("/token", cors(), async (c) => {
               400,
             );
           }
+          /* c8 ignore stop */
 
           if (accessGrant.redirectUri !== form.redirect_uri) {
             return c.json(
@@ -376,6 +362,8 @@ app.post("/token", cors(), async (c) => {
           // create the access token
           const accessToken = await createAccessToken(accessGrant, tx);
 
+          /* c8 ignore start */
+          // TODO: This scenario requires an insert to the database failing, so not sure how to test:
           if (accessToken === undefined) {
             return c.json(
               {
@@ -386,6 +374,7 @@ app.post("/token", cors(), async (c) => {
               500,
             );
           }
+          /* c8 ignore stop */
 
           return c.json(
             {
@@ -403,6 +392,8 @@ app.post("/token", cors(), async (c) => {
           deferrable: true,
         },
       )
+      /* c8 ignore start */
+      /* I'm not sure how we'd ever test this scenario */
       .catch((err) => {
         logger.error("An unknown error occurred", err);
 
@@ -415,32 +406,23 @@ app.post("/token", cors(), async (c) => {
           500,
         );
       });
+    /* c8 ignore stop */
   }
 
   if (form.grant_type === "client_credentials") {
-    if (form.code) {
+    // Public clients cannot use the client_credentials grant flow
+    if (!client.confidential) {
       return c.json(
         {
-          error: "invalid_request",
+          error: "unauthorized_client",
           error_description:
-            "The client credentials grant flow does not accept a code parameter.",
+            "The authenticated client is not authorized to use this authorization grant type.",
         },
         400,
       );
     }
 
-    if (form.redirect_uri) {
-      return c.json(
-        {
-          error: "invalid_request",
-          error_description:
-            "The client credentials grant flow does not accept a redirect_uri parameter.",
-        },
-        400,
-      );
-    }
-
-    if (form.scope?.some((s) => !application.scopes.includes(s))) {
+    if (form.scope?.some((s) => !client.scopes.includes(s))) {
       return c.json(
         {
           error: "invalid_scope",
@@ -451,10 +433,7 @@ app.post("/token", cors(), async (c) => {
       );
     }
 
-    const clientCredential = await createClientCredential(
-      application,
-      form.scope,
-    );
+    const clientCredential = await createClientCredential(client, form.scope);
 
     return c.json({
       access_token: clientCredential.token,
@@ -463,15 +442,53 @@ app.post("/token", cors(), async (c) => {
       created_at: clientCredential.created,
     });
   }
+});
 
-  return c.json(
-    {
-      error: "unsupported_grant_type",
-      error_description:
-        "The authorization grant type is not supported by the authorization server.",
-    },
-    400,
-  );
+// RFC7009 - OAuth Token Revocation:
+const tokenRevocationSchema = z.strictObject({
+  token: z.string(),
+  token_type_hint: z.string().optional(),
+  // client_id and client_secret are present but consumed by the
+  // clientAuthentication middleware:
+  client_id: z.string().optional(),
+  client_secret: z.string().optional(),
+});
+
+app.post("/revoke", cors(), clientAuthentication, async (c) => {
+  const client = c.get("client");
+  const result = await requestBody(c.req, tokenRevocationSchema);
+
+  if (!result.success) {
+    return c.json({ error: "invalid_request", zod_error: result.error }, 400);
+  }
+
+  if (
+    result.data.token_type_hint &&
+    result.data.token_type_hint !== "access_token"
+  ) {
+    return c.json(
+      {
+        error: "unsupported_token_type",
+        error_description:
+          "The authorization server does not support the revocation of the presented token type",
+      },
+      400,
+    );
+  }
+
+  await db
+    .delete(accessTokens)
+    .where(
+      and(
+        eq(accessTokens.code, result.data.token),
+        eq(accessTokens.applicationId, client.id),
+      ),
+    );
+
+  // The spec is a little strange here in that the response status is 200, but
+  // there's actually no response body, so 204 would be more appropriate.
+  // We return an empty json response to make testing easier:
+  return c.json({}, 200);
 });
 
 export async function oauthAuthorizationServer(c: Context) {
@@ -481,16 +498,16 @@ export async function oauthAuthorizationServer(c: Context) {
     issuer: new URL("/", url).href,
     authorization_endpoint: new URL("/oauth/authorize", url).href,
     token_endpoint: new URL("/oauth/token", url).href,
-    // Not yet supported by Hollo:
-    // "revocation_endpoint": "",
+    revocation_endpoint: new URL("/oauth/revoke", url).href,
     scopes_supported: scopeEnum.enumValues,
     response_types_supported: ["code"],
     response_modes_supported: ["query"],
     grant_types_supported: ["authorization_code", "client_credentials"],
     token_endpoint_auth_methods_supported: [
       "client_secret_post",
-      // Not supported by Hollo:
-      // "client_secret_basic",
+      "client_secret_basic",
+      // Not supported until we support public clients:
+      // "none",
     ],
     app_registration_endpoint: new URL("/api/v1/apps", url).href,
   });

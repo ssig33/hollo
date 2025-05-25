@@ -1,12 +1,31 @@
 import { exportJwk, generateCryptoKeyPair } from "@fedify/fedify";
 import { base64 } from "@hexagon/base64";
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 
 import db from "../../src/db";
 import * as Schema from "../../src/schema";
 
 import { OOB_REDIRECT_URI } from "../../src/oauth/constants";
-import { createAccessGrant, createAccessToken } from "../../src/oauth/helpers";
+import {
+  type AccessGrant,
+  createAccessGrant,
+  createAccessToken,
+  createClientCredential,
+} from "../../src/oauth/helpers";
+
+export function basicAuthorization(
+  application: Pick<Schema.Application, "clientId" | "clientSecret">,
+) {
+  const credential = Buffer.from(
+    `${application.clientId}:${application.clientSecret}`,
+  ).toString("base64");
+
+  return `Basic ${credential}`;
+}
+
+export function bearerAuthorization(token: Token) {
+  return `Bearer ${token.token}`;
+}
 
 export async function createAccount(
   options = { generateKeyPair: false },
@@ -89,19 +108,25 @@ export async function createAccount(
 export type OAuthApplicationOptions = {
   scopes?: Schema.Scope[];
   redirectUris?: string[];
+  confidential?: boolean;
 };
 
 export async function createOAuthApplication(
-  options: OAuthApplicationOptions = { redirectUris: [OOB_REDIRECT_URI] },
+  options: OAuthApplicationOptions = {
+    redirectUris: [OOB_REDIRECT_URI],
+  },
 ): Promise<Pick<Schema.Application, "id">> {
   const clientId = base64.fromArrayBuffer(
     crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer,
     true,
   );
-  const clientSecret = base64.fromArrayBuffer(
-    crypto.getRandomValues(new Uint8Array(32)).buffer as ArrayBuffer,
-    true,
-  );
+  const clientSecret =
+    options.confidential === true
+      ? base64.fromArrayBuffer(
+          crypto.getRandomValues(new Uint8Array(32)).buffer as ArrayBuffer,
+          true,
+        )
+      : "";
 
   const app = await db
     .insert(Schema.applications)
@@ -113,6 +138,7 @@ export async function createOAuthApplication(
       website: "",
       clientId,
       clientSecret,
+      confidential: !!options.confidential,
     } satisfies Schema.NewApplication)
     .returning({
       id: Schema.applications.id,
@@ -136,12 +162,40 @@ export async function getApplication(
   return application;
 }
 
+export async function getLastApplication(): Promise<Schema.Application> {
+  const result = await db
+    .select()
+    .from(Schema.applications)
+    .orderBy(desc(Schema.applications.created))
+    .limit(1);
+
+  if (result.length !== 1) {
+    throw new Error("Could not retrieve last created application");
+  }
+
+  return result[0];
+}
+
+export async function countApplications(): Promise<number> {
+  const result = await db.select({ count: count() }).from(Schema.applications);
+  if (result.length !== 1) {
+    throw new Error("Could not count applications");
+  }
+
+  return result[0].count;
+}
+
+export type Token = {
+  token: string;
+  scopes: string[];
+};
+
 export async function getAccessToken(
   client: Pick<Schema.Application, "id">,
   account: Pick<Schema.Account, "id">,
   scopes: Schema.Scope[] = [],
   redirect_uri: string = OOB_REDIRECT_URI,
-) {
+): Promise<Token> {
   const application = await getApplication(client);
   const { code } = await createAccessGrant(
     application.id,
@@ -165,8 +219,25 @@ export async function getAccessToken(
   }
 
   return {
-    authorizationHeader: `${accessToken.type} ${accessToken.token}`,
+    token: accessToken.token,
     scopes: accessToken.scope.split(" "),
+  };
+}
+
+export async function getClientCredentialToken(
+  client: Pick<Schema.Application, "id">,
+  scopes: Schema.Scope[] = [],
+): Promise<Token> {
+  const application = await getApplication(client);
+  const clientCredential = await createClientCredential(application, scopes);
+
+  if (!clientCredential) {
+    throw new Error("Failed to issue client credential for test");
+  }
+
+  return {
+    token: clientCredential.token,
+    scopes: clientCredential.scope.split(" "),
   };
 }
 
@@ -198,7 +269,23 @@ export async function getLastAccessGrant(): Promise<Schema.AccessGrant> {
   return result[0];
 }
 
-export async function getAccessGrant(
+export async function revokeAccessGrant(
+  accessGrant: AccessGrant,
+): Promise<void> {
+  const updated = await db
+    .update(Schema.accessGrants)
+    .set({
+      revoked: new Date(),
+    })
+    .where(eq(Schema.accessGrants.code, accessGrant.code))
+    .returning({ updated: Schema.accessGrants.code });
+
+  if (updated.length !== 1) {
+    throw new Error("Failed to revoke access grant");
+  }
+}
+
+export async function findAccessGrant(
   code: string,
 ): Promise<Schema.AccessGrant> {
   const accessGrant = await db.query.accessGrants.findFirst({
@@ -211,4 +298,14 @@ export async function getAccessGrant(
   }
 
   return accessGrant;
+}
+
+export async function findAccessToken(
+  token: string,
+): Promise<Schema.AccessToken | undefined> {
+  const accessToken = await db.query.accessTokens.findFirst({
+    where: eq(Schema.accessTokens.code, token),
+  });
+
+  return accessToken;
 }

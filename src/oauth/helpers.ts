@@ -1,6 +1,7 @@
 import { base64 } from "@hexagon/base64";
 import { getLogger } from "@logtape/logtape";
 
+import { lt } from "drizzle-orm";
 import db, { type Transaction } from "../db";
 import * as schema from "../schema";
 import type { Uuid } from "../uuid";
@@ -10,6 +11,7 @@ const logger = getLogger(["hollo", "oauth"]);
 const ACCESS_GRANT_SIZE = 64;
 const ACCESS_TOKEN_SIZE = 64;
 const TEN_MINUTES = 10 * 60 * 1000;
+const ONE_DAY = 3600 * 24 * 1000;
 
 export type AccessGrant = {
   code: string;
@@ -26,6 +28,14 @@ export async function createAccessGrant(
       .buffer as ArrayBuffer,
     true,
   );
+
+  try {
+    await db
+      .delete(schema.accessGrants)
+      .where(lt(schema.accessGrants.revoked, new Date(Date.now() - ONE_DAY)));
+  } catch (err) {
+    logger.warn("Failed to clean up expired access grants", { err });
+  }
 
   await db.insert(schema.accessGrants).values({
     id: crypto.randomUUID(),

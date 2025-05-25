@@ -6,6 +6,7 @@ import type * as Schema from "../schema";
 
 import { cleanDatabase } from "../../tests/helpers";
 import {
+  bearerAuthorization,
   createAccount,
   createOAuthApplication,
   getAccessToken,
@@ -14,13 +15,16 @@ import {
 import { createClientCredential } from "./helpers";
 import { type Variables, scopeRequired, tokenRequired } from "./middleware";
 
-describe("OAuth / Middlewar / tokenRequired", () => {
+describe("OAuth / Middleware / tokenRequired", () => {
   const app = new Hono<{ Variables: Variables }>();
 
   app.get("/tokenRequired", tokenRequired, (c) => {
     const token = c.get("token");
-    const header = c.req.header("Authorization");
-    return c.json({ ...token, header });
+    const authorizationHeader = c.req.header("Authorization");
+    return c.json({
+      ...token,
+      authorizationHeader,
+    });
   });
 
   let application: Schema.Application;
@@ -59,7 +63,10 @@ describe("OAuth / Middlewar / tokenRequired", () => {
 
       const json = await response.json();
 
-      t.assert.equal(json.header, `Bearer ${clientCredential.token}`);
+      t.assert.equal(
+        json.authorizationHeader,
+        `Bearer ${clientCredential.token}`,
+      );
       t.assert.equal(json.grant_type, "client_credentials");
       t.assert.equal(json.application.clientId, application.clientId);
       t.assert.deepStrictEqual(json.scopes, application.scopes);
@@ -79,7 +86,7 @@ describe("OAuth / Middlewar / tokenRequired", () => {
     const response = await app.request("/tokenRequired", {
       method: "GET",
       headers: {
-        Authorization: accessToken.authorizationHeader,
+        authorization: bearerAuthorization(accessToken),
       },
     });
 
@@ -88,7 +95,7 @@ describe("OAuth / Middlewar / tokenRequired", () => {
 
     const json = await response.json();
 
-    t.assert.equal(json.header, accessToken.authorizationHeader);
+    t.assert.equal(json.authorizationHeader, `Bearer ${accessToken.token}`);
     t.assert.equal(json.grant_type, "authorization_code");
     t.assert.equal(json.applicationId, application.id);
     t.assert.equal(json.accountOwnerId, account.id);
@@ -179,7 +186,7 @@ describe("OAuth / Middlewar / tokenRequired", () => {
   );
 });
 
-describe("OAuth / Middlewar / scopeRequired", () => {
+describe("OAuth / Middleware / scopeRequired", () => {
   const app = new Hono<{ Variables: Variables }>();
 
   app.get("/read", tokenRequired, scopeRequired(["read"]), (c) => {
@@ -194,15 +201,21 @@ describe("OAuth / Middlewar / scopeRequired", () => {
     scopeRequired(["read:blocks"]),
     (c) => {
       const token = c.get("token");
-      const header = c.req.header("Authorization");
-      return c.json({ ...token, header });
+      const authorizationHeader = c.req.header("Authorization");
+      return c.json({
+        ...token,
+        authorizationHeader,
+      });
     },
   );
 
   app.get("/follow", tokenRequired, scopeRequired(["follow"]), (c) => {
     const token = c.get("token");
-    const header = c.req.header("Authorization");
-    return c.json({ ...token, header });
+    const authorizationHeader = c.req.header("Authorization");
+    return c.json({
+      ...token,
+      authorizationHeader,
+    });
   });
 
   afterEach(async () => {

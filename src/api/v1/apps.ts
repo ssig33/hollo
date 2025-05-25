@@ -3,6 +3,7 @@ import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../db";
+import { requestBody } from "../../helpers";
 import { type Variables, tokenRequired } from "../../oauth/middleware";
 import {
   type NewApplication,
@@ -15,7 +16,7 @@ const logger = getLogger(["hollo", "api", "v1", "apps"]);
 
 const app = new Hono<{ Variables: Variables }>();
 
-const applicationSchema = z.object({
+const applicationSchema = z.strictObject({
   client_name: z.string().optional(),
   redirect_uris: z
     .union([z.string().trim(), z.array(z.string().trim())])
@@ -56,31 +57,15 @@ const applicationSchema = z.object({
 });
 
 app.post("/", async (c) => {
-  let form: z.infer<typeof applicationSchema>;
-  const contentType = c.req.header("Content-Type");
-  if (
-    contentType === "application/json" ||
-    contentType?.match(/^application\/json\s*;/)
-  ) {
-    const json = await c.req.json();
-    const result = await applicationSchema.safeParseAsync(json);
-    if (!result.success) {
-      logger.debug("Invalid request: {error}", { error: result.error });
-      return c.json({ error: "Invalid request", zod_error: result.error }, 400);
-    }
-    form = result.data;
-  } else {
-    const formData = await c.req.parseBody();
-    const result = await applicationSchema.safeParseAsync(formData);
-    if (!result.success) {
-      logger.debug("Invalid request: {error}", { error: result.error });
-      return c.json({ error: "Invalid request", zod_error: result.error }, 400);
-    }
-    form = result.data;
+  const result = await requestBody(c.req, applicationSchema);
+
+  if (!result.success) {
+    logger.debug("Invalid request: {error}", { error: result.error });
+    return c.json({ error: "invalid_request", zod_error: result.error }, 422);
   }
-  if (form == null) {
-    return c.json({ error: "Invalid request" }, 400);
-  }
+
+  const form = result.data;
+
   const clientId = base64.fromArrayBuffer(
     crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer,
     true,
@@ -89,20 +74,31 @@ app.post("/", async (c) => {
     crypto.getRandomValues(new Uint8Array(32)).buffer as ArrayBuffer,
     true,
   );
+
+  const uniqueScopes = [
+    ...new Set(form.scopes ?? (["read"] satisfies Scope[])),
+  ];
+
   const apps = await db
     .insert(applications)
     .values({
       id: crypto.randomUUID(),
       name: form.client_name ?? "",
       redirectUris: form.redirect_uris ?? [],
-      scopes: form.scopes ?? (["read"] satisfies Scope[]),
+      scopes: uniqueScopes,
       website: form.website,
       clientId,
       clientSecret,
+      // TODO: Support public clients
+      confidential: true,
     } satisfies NewApplication)
     .returning();
+
+  // FIXME: theoretically we could fail to insert the application, in which case
+  // `app` would be undefined?
   const app = apps[0];
-  const result = {
+
+  const credentialApplication = {
     id: app.id,
     name: app.name,
     website: app.website,
@@ -114,8 +110,9 @@ app.post("/", async (c) => {
     // vapid_key is deprecated, it should be fetched from /api/v1/instance instead
     vapid_key: "",
   };
-  logger.debug("Created application: {app}", { app: result });
-  return c.json(result);
+
+  logger.debug("Created application: {app}", { app: credentialApplication });
+  return c.json(credentialApplication);
 });
 
 app.get("/verify_credentials", tokenRequired, async (c) => {
