@@ -60,7 +60,7 @@ app.post("/", async (c) => {
   const result = await requestBody(c.req, applicationSchema);
 
   if (!result.success) {
-    logger.debug("Invalid request: {error}", { error: result.error });
+    logger.debug("Invalid request: {error}", { error: result.error.errors });
     return c.json({ error: "invalid_request", zod_error: result.error }, 422);
   }
 

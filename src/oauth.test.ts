@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, it } from "node:test";
-import type { TestContext } from "node:test";
+import * as timekeeper from "timekeeper";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import app from "./index";
 import type * as Schema from "./schema";
@@ -21,86 +21,74 @@ import { getLoginCookie } from "../tests/helpers/web";
 import { OOB_REDIRECT_URI } from "./oauth/constants";
 import { createAccessGrant } from "./oauth/helpers";
 
-describe("OAuth", () => {
-  it(
-    "Can GET /.well-known/oauth-authorization-server",
-    { plan: 11 },
-    async (t: TestContext) => {
-      // We use the full URL in this test as the route calculates values based
-      // on the Host header
-      const response = await app.request(
-        "http://localhost:3000/.well-known/oauth-authorization-server",
-        {
-          method: "GET",
-        },
-      );
-
-      t.assert.equal(response.status, 200, "Should return 200-ok");
-
-      const metadata = await response.json();
-
-      t.assert.equal(metadata.issuer, "http://localhost:3000/");
-      t.assert.equal(
-        metadata.authorization_endpoint,
-        "http://localhost:3000/oauth/authorize",
-      );
-      t.assert.equal(
-        metadata.token_endpoint,
-        "http://localhost:3000/oauth/token",
-      );
-      t.assert.equal(
-        metadata.revocation_endpoint,
-        "http://localhost:3000/oauth/revoke",
-      );
-      // Non-standard, mastodon extension:
-      t.assert.equal(
-        metadata.app_registration_endpoint,
-        "http://localhost:3000/api/v1/apps",
-      );
-
-      t.assert.deepStrictEqual(metadata.response_types_supported, ["code"]);
-      t.assert.deepStrictEqual(metadata.response_modes_supported, ["query"]);
-      t.assert.deepStrictEqual(metadata.grant_types_supported, [
-        "authorization_code",
-        "client_credentials",
-      ]);
-      t.assert.deepStrictEqual(metadata.token_endpoint_auth_methods_supported, [
-        "client_secret_post",
-        "client_secret_basic",
-      ]);
-
-      t.assert.ok(
-        Array.isArray(metadata.scopes_supported),
-        "Should return an array of scopes supported",
-      );
-    },
-  );
-});
-
-describe("OAuth / POST /oauth/authorize", () => {
-  let application: Schema.Application;
-  let client: Awaited<ReturnType<typeof createOAuthApplication>>;
-  let account: Awaited<ReturnType<typeof createAccount>>;
-  const APP_REDIRECT_URI = "custom://oauth_callback";
-
-  beforeEach(async () => {
-    account = await createAccount();
-    client = await createOAuthApplication({
-      scopes: ["read:accounts"],
-      redirectUris: [OOB_REDIRECT_URI, APP_REDIRECT_URI],
-      confidential: true,
-    });
-    application = await getApplication(client);
-  });
-
+describe.sequential("OAuth", () => {
   afterEach(async () => {
     await cleanDatabase();
   });
 
-  it(
-    "Does not create an access grant if denied",
-    { plan: 2 },
-    async (t: TestContext) => {
+  it("Can GET /.well-known/oauth-authorization-server", async () => {
+    expect.assertions(12);
+    // We use the full URL in this test as the route calculates values based
+    // on the Host header
+    const response = await app.request(
+      "http://localhost:3000/.well-known/oauth-authorization-server",
+      {
+        method: "GET",
+      },
+    );
+
+    expect(response.status).toBe(200);
+
+    const metadata = await response.json();
+
+    expect(metadata.issuer).toBe("http://localhost:3000/");
+    expect(metadata.authorization_endpoint).toBe(
+      "http://localhost:3000/oauth/authorize",
+    );
+    expect(metadata.token_endpoint).toBe("http://localhost:3000/oauth/token");
+    expect(metadata.revocation_endpoint).toBe(
+      "http://localhost:3000/oauth/revoke",
+    );
+    // Non-standard, mastodon extension:
+    expect(metadata.app_registration_endpoint).toBe(
+      "http://localhost:3000/api/v1/apps",
+    );
+
+    expect(metadata.response_types_supported).toEqual(["code"]);
+    expect(metadata.response_modes_supported).toEqual(["query"]);
+    expect(metadata.grant_types_supported).toEqual([
+      "authorization_code",
+      "client_credentials",
+    ]);
+    expect(metadata.token_endpoint_auth_methods_supported).toEqual([
+      "client_secret_post",
+      "client_secret_basic",
+    ]);
+
+    expect(metadata.scopes_supported).to;
+
+    expect(Array.isArray(metadata.scopes_supported)).toBeTruthy();
+  });
+
+  describe.sequential("POST /oauth/authorize", () => {
+    let application: Schema.Application;
+    let client: Awaited<ReturnType<typeof createOAuthApplication>>;
+    let account: Awaited<ReturnType<typeof createAccount>>;
+    const APP_REDIRECT_URI = "custom://oauth_callback";
+
+    beforeEach(async () => {
+      account = await createAccount();
+      client = await createOAuthApplication({
+        scopes: ["read:accounts"],
+        redirectUris: [OOB_REDIRECT_URI, APP_REDIRECT_URI],
+        confidential: true,
+      });
+      application = await getApplication(client);
+    });
+
+    it("Does not create an access grant if denied", async () => {
+      expect.assertions(2);
+
       const cookie = await getLoginCookie();
       const formData = new FormData();
 
@@ -118,18 +106,15 @@ describe("OAuth / POST /oauth/authorize", () => {
         },
       });
 
-      t.assert.equal(response.status, 302);
-      t.assert.equal(
-        response.headers.get("Location"),
+      expect(response.status).toBe(302);
+      expect(response.headers.get("Location")).toBe(
         "custom://oauth_callback?error=access_denied&error_description=The+resource+owner+or+authorization+server+denied+the+request.",
       );
-    },
-  );
+    });
 
-  it(
-    "Can return authorization code out-of-bounds",
-    { plan: 8 },
-    async (t: TestContext) => {
+    it("Can return authorization code out-of-bounds", async () => {
+      expect.assertions(8);
+
       const cookie = await getLoginCookie();
       const formData = new FormData();
 
@@ -147,30 +132,23 @@ describe("OAuth / POST /oauth/authorize", () => {
         },
       });
 
-      t.assert.equal(response.status, 200);
-      t.assert.match(response.headers.get("content-type") ?? "", /text\/html/);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type") ?? "").toMatch(/text\/html/);
 
       const responseBody = await response.text();
       const lastAccessGrant = await getLastAccessGrant();
 
-      t.assert.equal(lastAccessGrant.applicationId, application.id);
-      t.assert.equal(lastAccessGrant.resourceOwnerId, account.id);
-      t.assert.equal(lastAccessGrant.redirectUri, OOB_REDIRECT_URI);
-      t.assert.deepStrictEqual(lastAccessGrant.scopes, ["read:accounts"]);
-      t.assert.strictEqual(lastAccessGrant.revoked, null);
+      expect(lastAccessGrant.applicationId).toBe(application.id);
+      expect(lastAccessGrant.resourceOwnerId).toBe(account.id);
+      expect(lastAccessGrant.redirectUri).toBe(OOB_REDIRECT_URI);
+      expect(lastAccessGrant.scopes).toEqual(["read:accounts"]);
+      expect(lastAccessGrant.revoked).toBeNull();
 
-      t.assert.match(
-        responseBody,
-        new RegExp(`${lastAccessGrant.code}`),
-        "Response should contain the access grant code",
-      );
-    },
-  );
+      expect(responseBody).toMatch(new RegExp(`${lastAccessGrant.code}`));
+    });
 
-  it(
-    "Can return authorization code via redirect",
-    { plan: 7 },
-    async (t: TestContext) => {
+    it("Can return authorization code via redirect", async () => {
+      expect.assertions(7);
       const cookie = await getLoginCookie();
       const formData = new FormData();
 
@@ -189,55 +167,157 @@ describe("OAuth / POST /oauth/authorize", () => {
         },
       });
 
-      t.assert.equal(response.status, 302);
+      expect(response.status).toBe(302);
 
       const lastAccessGrant = await getLastAccessGrant();
-      t.assert.equal(lastAccessGrant.applicationId, application.id);
-      t.assert.equal(lastAccessGrant.resourceOwnerId, account.id);
-      t.assert.equal(lastAccessGrant.redirectUri, APP_REDIRECT_URI);
-      t.assert.deepStrictEqual(lastAccessGrant.scopes, ["read:accounts"]);
-      t.assert.strictEqual(lastAccessGrant.revoked, null);
+      expect(lastAccessGrant.applicationId).toBe(application.id);
+      expect(lastAccessGrant.resourceOwnerId).toBe(account.id);
+      expect(lastAccessGrant.redirectUri).toBe(APP_REDIRECT_URI);
+      expect(lastAccessGrant.scopes).toEqual(["read:accounts"]);
+      expect(lastAccessGrant.revoked).toBeNull();
 
-      t.assert.equal(
-        response.headers.get("Location"),
+      expect(response.headers.get("Location")).toBe(
         `${APP_REDIRECT_URI}?code=${lastAccessGrant.code}&state=test_state_value`,
       );
-    },
-  );
-});
-
-describe("OAuth / POST /oauth/token (Confidential Client)", () => {
-  let account: Awaited<ReturnType<typeof createAccount>>;
-  let application: Schema.Application;
-  let client: Awaited<ReturnType<typeof createOAuthApplication>>;
-  let wrongApplication: Schema.Application;
-  let wrongClient: Awaited<ReturnType<typeof createOAuthApplication>>;
-
-  beforeEach(async () => {
-    account = await createAccount();
-    client = await createOAuthApplication({
-      scopes: ["read:accounts"],
-      redirectUris: [OOB_REDIRECT_URI],
-      confidential: true,
     });
-    application = await getApplication(client);
 
-    wrongClient = await createOAuthApplication({
-      scopes: ["write:accounts"],
-      redirectUris: [OOB_REDIRECT_URI],
-      confidential: true,
+    it("returns an error if the application does not exist", async () => {
+      expect.assertions(1);
+
+      const cookie = await getLoginCookie();
+      const formData = new FormData();
+
+      formData.set("account_id", account.id);
+      formData.set("application_id", "403dafb4-9c37-4dfc-bfb4-02fb0cf681fb");
+      formData.set("redirect_uri", OOB_REDIRECT_URI);
+      // write:accounts is not a registered scope for the application:
+      formData.set("scopes", "write:accounts");
+      formData.set("decision", "allow");
+
+      const response = await app.request("/oauth/authorize", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Cookie: cookie,
+        },
+      });
+
+      expect(response.status).toBe(404);
     });
-    wrongApplication = await getApplication(wrongClient);
+
+    it("returns an error if the account does not exist", async () => {
+      expect.assertions(1);
+
+      const cookie = await getLoginCookie();
+      const formData = new FormData();
+
+      formData.set("account_id", "403dafb4-9c37-4dfc-bfb4-02fb0cf681fb");
+      formData.set("application_id", application.id);
+      formData.set("redirect_uri", OOB_REDIRECT_URI);
+      // write:accounts is not a registered scope for the application:
+      formData.set("scopes", "write:accounts");
+      formData.set("decision", "allow");
+
+      const response = await app.request("/oauth/authorize", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Cookie: cookie,
+        },
+      });
+
+      expect(response.status).toBe(404);
+    });
+
+    it("returns an error if the scopes does not match the application scopes", async () => {
+      expect.assertions(2);
+
+      const cookie = await getLoginCookie();
+      const formData = new FormData();
+
+      formData.set("account_id", account.id);
+      formData.set("application_id", application.id);
+      formData.set("redirect_uri", OOB_REDIRECT_URI);
+      // write:accounts is not a registered scope for the application:
+      formData.set("scopes", "write:accounts");
+      formData.set("decision", "allow");
+
+      const response = await app.request("/oauth/authorize", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Cookie: cookie,
+        },
+      });
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+
+      expect(body).toMatchObject({
+        error: "invalid_scope",
+      });
+    });
+
+    it("returns an error if the redirect_uri does not match the application redirect URIs", async () => {
+      expect.assertions(2);
+
+      const cookie = await getLoginCookie();
+      const formData = new FormData();
+
+      formData.set("account_id", account.id);
+      formData.set("application_id", application.id);
+      formData.set("redirect_uri", "https://invalid.example/");
+      formData.set("scopes", "read:accounts");
+      formData.set("decision", "allow");
+
+      const response = await app.request("/oauth/authorize", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Cookie: cookie,
+        },
+      });
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+
+      expect(body).toMatchObject({
+        error: "invalid_redirect_uri",
+      });
+    });
   });
 
-  afterEach(async () => {
-    await cleanDatabase();
-  });
+  describe.sequential("POST /oauth/token (Confidential Client)", () => {
+    let account: Awaited<ReturnType<typeof createAccount>>;
+    let application: Schema.Application;
+    let client: Awaited<ReturnType<typeof createOAuthApplication>>;
+    let wrongApplication: Schema.Application;
+    let wrongClient: Awaited<ReturnType<typeof createOAuthApplication>>;
 
-  it(
-    "cannot request an access token without using a client authentication method",
-    { plan: 3 },
-    async (t: TestContext) => {
+    beforeEach(async () => {
+      account = await createAccount();
+      client = await createOAuthApplication({
+        scopes: ["read:accounts"],
+        redirectUris: [OOB_REDIRECT_URI],
+        confidential: true,
+      });
+      application = await getApplication(client);
+
+      wrongClient = await createOAuthApplication({
+        scopes: ["write:accounts"],
+        redirectUris: [OOB_REDIRECT_URI],
+        confidential: true,
+      });
+      wrongApplication = await getApplication(wrongClient);
+    });
+
+    afterEach(async () => {
+      vi.useRealTimers();
+      await cleanDatabase();
+    });
+
+    it("cannot request an access token without using a client authentication method", async () => {
+      expect.assertions(3);
       // Here we are deliberately not using any client authentication method,
       // which is not acceptable
 
@@ -250,18 +330,15 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 401);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(401);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
-      t.assert.equal(responseBody.error, "invalid_client");
-    },
-  );
+      expect(responseBody.error).toBe("invalid_client");
+    });
 
-  it(
-    "cannot request an access token using multiple client authentication methods",
-    { plan: 3 },
-    async (t: TestContext) => {
+    it("cannot request an access token using multiple client authentication methods", async () => {
+      expect.assertions(3);
       // Here we are using both client_secret_post and client_secret_basic
       // together, which is not acceptable
 
@@ -279,18 +356,15 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 400);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
-      t.assert.equal(responseBody.error, "invalid_request");
-    },
-  );
+      expect(responseBody.error).toBe("invalid_request");
+    });
 
-  it(
-    "cannot request an access token using invalid client authentication",
-    { plan: 3 },
-    async (t: TestContext) => {
+    it("cannot request an access token using invalid client authentication", async () => {
+      expect.assertions(3);
       const body = new FormData();
       body.set("grant_type", "client_credentials");
       body.set("client_id", application.clientId);
@@ -302,19 +376,16 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 401);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(401);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
-      t.assert.equal(responseBody.error, "invalid_client");
-    },
-  );
+      expect(responseBody.error).toBe("invalid_client");
+    });
 
-  // Client Credentials Grant Flow
-  it(
-    "can request an access token using the client credentials grant flow with client_secret_basic",
-    { plan: 7 },
-    async (t: TestContext) => {
+    // Client Credentials Grant Flow
+    it("can request an access token using the client credentials grant flow with client_secret_basic", async () => {
+      expect.assertions(7);
       const body = new FormData();
       body.set("grant_type", "client_credentials");
       body.set("scope", "read:accounts");
@@ -327,28 +398,21 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
       const lastAccessToken = await getLastAccessToken();
 
-      t.assert.equal(lastAccessToken.grant_type, "client_credentials");
-      t.assert.deepStrictEqual(lastAccessToken.scopes, ["read:accounts"]);
-      t.assert.equal(
-        responseBody.access_token,
-        lastAccessToken.code,
-        "Generates an Access Token",
-      );
-      t.assert.equal(responseBody.token_type, "Bearer");
-      t.assert.equal(responseBody.scope, lastAccessToken.scopes.join(" "));
-    },
-  );
+      expect(lastAccessToken.grant_type).toBe("client_credentials");
+      expect(lastAccessToken.scopes).toEqual(["read:accounts"]);
+      expect(responseBody.access_token).toBe(lastAccessToken.code);
+      expect(responseBody.token_type).toBe("Bearer");
+      expect(responseBody.scope).toBe(lastAccessToken.scopes.join(" "));
+    });
 
-  it(
-    "can request an access token using the client credentials grant flow with client_secret_post",
-    { plan: 7 },
-    async (t: TestContext) => {
+    it("can request an access token using the client credentials grant flow with client_secret_post", async () => {
+      expect.assertions(7);
       const body = new FormData();
       body.set("grant_type", "client_credentials");
       body.set("client_id", application.clientId);
@@ -360,28 +424,21 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
       const lastAccessToken = await getLastAccessToken();
 
-      t.assert.equal(lastAccessToken.grant_type, "client_credentials");
-      t.assert.deepStrictEqual(lastAccessToken.scopes, ["read:accounts"]);
-      t.assert.equal(
-        responseBody.access_token,
-        lastAccessToken.code,
-        "Generates an Access Token",
-      );
-      t.assert.equal(responseBody.token_type, "Bearer");
-      t.assert.equal(responseBody.scope, lastAccessToken.scopes.join(" "));
-    },
-  );
+      expect(lastAccessToken.grant_type).toBe("client_credentials");
+      expect(lastAccessToken.scopes).toEqual(["read:accounts"]);
+      expect(responseBody.access_token).toBe(lastAccessToken.code);
+      expect(responseBody.token_type).toBe("Bearer");
+      expect(responseBody.scope).toBe(lastAccessToken.scopes.join(" "));
+    });
 
-  it(
-    "can request an access token using the client credentials grant flow using JSON body",
-    { plan: 7 },
-    async (t: TestContext) => {
+    it("can request an access token using the client credentials grant flow using JSON body", async () => {
+      expect.assertions(7);
       const body = JSON.stringify({
         grant_type: "client_credentials",
         client_id: application.clientId,
@@ -397,28 +454,21 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const lastAccessToken = await getLastAccessToken();
       const responseBody = await response.json();
 
-      t.assert.equal(lastAccessToken.grant_type, "client_credentials");
-      t.assert.deepStrictEqual(lastAccessToken.scopes, ["read:accounts"]);
-      t.assert.equal(
-        responseBody.access_token,
-        lastAccessToken.code,
-        "Generates an Access Token",
-      );
-      t.assert.equal(responseBody.token_type, "Bearer");
-      t.assert.equal(responseBody.scope, lastAccessToken.scopes.join(" "));
-    },
-  );
+      expect(lastAccessToken.grant_type).toBe("client_credentials");
+      expect(lastAccessToken.scopes).toEqual(["read:accounts"]);
+      expect(responseBody.access_token).toBe(lastAccessToken.code);
+      expect(responseBody.token_type).toBe("Bearer");
+      expect(responseBody.scope).toBe(lastAccessToken.scopes.join(" "));
+    });
 
-  it(
-    "cannot request client credentials grant flow with scope not registered to the application",
-    { plan: 4 },
-    async (t: TestContext) => {
+    it("cannot request client credentials grant flow with scope not registered to the application", async () => {
+      expect.assertions(4);
       const body = new FormData();
       body.set("grant_type", "client_credentials");
       body.set("scope", "write:accounts");
@@ -431,20 +481,17 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 400);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
+      expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
       const responseBody = await response.json();
-      t.assert.equal(responseBody.error, "invalid_scope");
-    },
-  );
+      expect(responseBody.error).toBe("invalid_scope");
+    });
 
-  // OAuth Authorization Code Grant Flow
-  it(
-    "can exchange an access grant for an access token",
-    { plan: 8 },
-    async (t: TestContext) => {
+    // OAuth Authorization Code Grant Flow
+    it("can exchange an access grant for an access token", async () => {
+      expect.assertions(8);
       const accessGrant = await createAccessGrant(
         application.id,
         account.id,
@@ -465,44 +512,68 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
 
       const lastAccessToken = await getLastAccessToken();
       const changedAccessGrant = await findAccessGrant(accessGrant.code);
 
-      t.assert.notEqual(
-        changedAccessGrant.revoked,
-        null,
-        "Successfully revokes the access grant",
-      );
-      t.assert.equal(lastAccessToken.grant_type, "authorization_code");
-      t.assert.deepStrictEqual(
-        lastAccessToken.scopes,
-        changedAccessGrant.scopes,
-      );
+      expect(changedAccessGrant.revoked).not.toBeNull();
+      expect(lastAccessToken.grant_type).toBe("authorization_code");
+      expect(lastAccessToken.scopes).toEqual(changedAccessGrant.scopes);
 
-      t.assert.equal(
-        responseBody.access_token,
-        lastAccessToken.code,
-        "Generates an Access Token",
-      );
-      t.assert.equal(responseBody.token_type, "Bearer");
-      t.assert.equal(responseBody.scope, lastAccessToken.scopes.join(" "));
-    },
-  );
+      expect(responseBody.access_token).toBe(lastAccessToken.code);
+      expect(responseBody.token_type).toBe("Bearer");
+      expect(responseBody.scope).toBe(lastAccessToken.scopes.join(" "));
+    });
 
-  // This test case needs time travel, lines 332-339
-  it.skip(
-    "cannot exchange an access grant for an access token when the access grant has expired",
-  );
+    describe.sequential("expired access grants", () => {
+      beforeEach(() => {
+        timekeeper.freeze();
+      });
 
-  it(
-    "cannot exchange an access grant for an access token when the redirect URI does not match",
-    { plan: 3 },
-    async (t: TestContext) => {
+      afterEach(() => {
+        timekeeper.reset();
+      });
+
+      it("cannot exchange an access grant for an access token when the access grant has expired", async () => {
+        expect.assertions(3);
+
+        const accessGrant = await createAccessGrant(
+          application.id,
+          account.id,
+          ["read:accounts"],
+          OOB_REDIRECT_URI,
+        );
+
+        timekeeper.travel(accessGrant.expiry.valueOf() + 1000);
+
+        const body = new FormData();
+        body.set("grant_type", "authorization_code");
+        body.set("client_id", application.clientId);
+        // client_secret is technically optional, but we don't support public clients yet:
+        body.set("client_secret", application.clientSecret);
+        body.set("redirect_uri", OOB_REDIRECT_URI);
+        body.set("code", accessGrant.code);
+
+        const response = await app.request("/oauth/token", {
+          method: "POST",
+          body,
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.headers.get("content-type")).toBe("application/json");
+
+        const responseBody = await response.json();
+
+        expect(responseBody.error).toBe("invalid_grant");
+      });
+    });
+
+    it("cannot exchange an access grant for an access token when the redirect URI does not match", async () => {
+      expect.assertions(3);
       const accessGrant = await createAccessGrant(
         application.id,
         account.id,
@@ -523,19 +594,16 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 400);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
 
-      t.assert.equal(responseBody.error, "invalid_grant");
-    },
-  );
+      expect(responseBody.error).toBe("invalid_grant");
+    });
 
-  it(
-    "cannot exchange an access grant for an access token when the client does not match",
-    { plan: 3 },
-    async (t: TestContext) => {
+    it("cannot exchange an access grant for an access token when the client does not match", async () => {
+      expect.assertions(3);
       const accessGrant = await createAccessGrant(
         application.id,
         account.id,
@@ -556,19 +624,16 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 400);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
 
-      t.assert.equal(responseBody.error, "invalid_grant");
-    },
-  );
+      expect(responseBody.error).toBe("invalid_grant");
+    });
 
-  it(
-    "cannot exchange an access grant for an access token when the access grant is revoked",
-    { plan: 3 },
-    async (t: TestContext) => {
+    it("cannot exchange an access grant for an access token when the access grant is revoked", async () => {
+      expect.assertions(3);
       const accessGrant = await createAccessGrant(
         application.id,
         account.id,
@@ -591,20 +656,17 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 400);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
 
-      t.assert.equal(responseBody.error, "invalid_grant");
-    },
-  );
+      expect(responseBody.error).toBe("invalid_grant");
+    });
 
-  // Unsupported authorization grant flow:
-  it(
-    "cannot use an unsupported grant_type",
-    { plan: 4 },
-    async (t: TestContext) => {
+    // Unsupported authorization grant flow:
+    it("cannot use an unsupported grant_type", async () => {
+      expect.assertions(5);
       const body = new FormData();
       body.set("grant_type", "invalid");
 
@@ -616,63 +678,62 @@ describe("OAuth / POST /oauth/token (Confidential Client)", () => {
         body,
       });
 
-      t.assert.equal(response.status, 400);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const responseBody = await response.json();
 
-      t.assert.equal(typeof responseBody, "object");
-      t.assert.equal(responseBody.error, "unsupported_grant_type");
-    },
-  );
-
-  // Invalid request
-  it("cannot use unknown parameters", { plan: 4 }, async (t: TestContext) => {
-    const body = new FormData();
-    body.set("grant_type", "client_credentials");
-    body.set("redirect_uri", OOB_REDIRECT_URI);
-
-    const response = await app.request("/oauth/token", {
-      method: "POST",
-      headers: {
-        authorization: basicAuthorization(application),
-      },
-      body,
+      expect(typeof responseBody).toBe("object");
+      expect(Object.keys(responseBody)).toEqual(["error", "error_description"]);
+      expect(responseBody.error).toBe("unsupported_grant_type");
     });
 
-    t.assert.equal(response.status, 400);
-    t.assert.equal(response.headers.get("content-type"), "application/json");
+    // Invalid request
+    it("cannot use unknown parameters", async () => {
+      expect.assertions(4);
+      const body = new FormData();
+      body.set("grant_type", "client_credentials");
+      body.set("redirect_uri", OOB_REDIRECT_URI);
 
-    const responseBody = await response.json();
+      const response = await app.request("/oauth/token", {
+        method: "POST",
+        headers: {
+          authorization: basicAuthorization(application),
+        },
+        body,
+      });
 
-    t.assert.equal(typeof responseBody, "object");
-    t.assert.equal(responseBody.error, "invalid_request");
-  });
-});
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
-describe("OAuth / POST /oauth/token (Public Client)", () => {
-  let application: Schema.Application;
-  let client: Awaited<ReturnType<typeof createOAuthApplication>>;
-  let account: Awaited<ReturnType<typeof createAccount>>;
+      const responseBody = await response.json();
 
-  beforeEach(async () => {
-    account = await createAccount();
-    client = await createOAuthApplication({
-      scopes: ["read:accounts"],
-      redirectUris: [OOB_REDIRECT_URI],
-      confidential: false,
+      expect(typeof responseBody).toBe("object");
+      expect(responseBody.error).toBe("invalid_request");
     });
-    application = await getApplication(client);
   });
 
-  afterEach(async () => {
-    await cleanDatabase();
-  });
+  describe.sequential("POST /oauth/token (Public Client)", () => {
+    let application: Schema.Application;
+    let client: Awaited<ReturnType<typeof createOAuthApplication>>;
+    let account: Awaited<ReturnType<typeof createAccount>>;
 
-  it(
-    "can request an access token using the authorization code grant flow",
-    { plan: 8 },
-    async (t: TestContext) => {
+    beforeEach(async () => {
+      account = await createAccount();
+      client = await createOAuthApplication({
+        scopes: ["read:accounts"],
+        redirectUris: [OOB_REDIRECT_URI],
+        confidential: false,
+      });
+      application = await getApplication(client);
+    });
+
+    afterEach(async () => {
+      await cleanDatabase();
+    });
+
+    it("can request an access token using the authorization code grant flow", async () => {
+      expect.assertions(8);
       const accessGrant = await createAccessGrant(
         application.id,
         account.id,
@@ -695,37 +756,23 @@ describe("OAuth / POST /oauth/token (Public Client)", () => {
 
       const responseBody = await response.json();
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
       const lastAccessToken = await getLastAccessToken();
       const changedAccessGrant = await findAccessGrant(accessGrant.code);
 
-      t.assert.notEqual(
-        changedAccessGrant.revoked,
-        null,
-        "Successfully revokes the access grant",
-      );
-      t.assert.equal(lastAccessToken.grant_type, "authorization_code");
-      t.assert.deepStrictEqual(
-        lastAccessToken.scopes,
-        changedAccessGrant.scopes,
-      );
+      expect(changedAccessGrant.revoked).not.toBeNull();
+      expect(lastAccessToken.grant_type).toBe("authorization_code");
+      expect(lastAccessToken.scopes).toEqual(changedAccessGrant.scopes);
 
-      t.assert.equal(
-        responseBody.access_token,
-        lastAccessToken.code,
-        "Generates an Access Token",
-      );
-      t.assert.equal(responseBody.token_type, "Bearer");
-      t.assert.equal(responseBody.scope, lastAccessToken.scopes.join(" "));
-    },
-  );
+      expect(responseBody.access_token).toBe(lastAccessToken.code);
+      expect(responseBody.token_type).toBe("Bearer");
+      expect(responseBody.scope).toBe(lastAccessToken.scopes.join(" "));
+    });
 
-  it(
-    "cannot request an access token using the client credentials grant flow",
-    { plan: 3 },
-    async (t: TestContext) => {
+    it("cannot request an access token using the client credentials grant flow", async () => {
+      expect.assertions(3);
       const body = new FormData();
       body.set("grant_type", "client_credentials");
       body.set("scope", "read:accounts");
@@ -740,46 +787,43 @@ describe("OAuth / POST /oauth/token (Public Client)", () => {
 
       const responseBody = await response.json();
 
-      t.assert.equal(response.status, 400);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
 
-      t.assert.equal(responseBody.error, "unauthorized_client");
-    },
-  );
-});
-
-describe("OAuth / POST /oauth/revoke", () => {
-  let account: Awaited<ReturnType<typeof createAccount>>;
-  let client: Awaited<ReturnType<typeof createOAuthApplication>>;
-  let application: Schema.Application;
-  let wrongClient: Awaited<ReturnType<typeof createOAuthApplication>>;
-  let wrongApplication: Schema.Application;
-
-  beforeEach(async () => {
-    account = await createAccount();
-    client = await createOAuthApplication({
-      scopes: ["read:accounts"],
-      redirectUris: [OOB_REDIRECT_URI],
-      confidential: true,
+      expect(responseBody.error).toBe("unauthorized_client");
     });
-    application = await getApplication(client);
-
-    wrongClient = await createOAuthApplication({
-      scopes: ["read:accounts"],
-      redirectUris: [OOB_REDIRECT_URI],
-      confidential: true,
-    });
-    wrongApplication = await getApplication(wrongClient);
   });
 
-  afterEach(async () => {
-    await cleanDatabase();
-  });
+  describe.sequential("POST /oauth/revoke", () => {
+    let account: Awaited<ReturnType<typeof createAccount>>;
+    let client: Awaited<ReturnType<typeof createOAuthApplication>>;
+    let application: Schema.Application;
+    let wrongClient: Awaited<ReturnType<typeof createOAuthApplication>>;
+    let wrongApplication: Schema.Application;
 
-  it(
-    "can revoke an access token using client_secret_basic",
-    { plan: 4 },
-    async (t: TestContext) => {
+    beforeEach(async () => {
+      account = await createAccount();
+      client = await createOAuthApplication({
+        scopes: ["read:accounts"],
+        redirectUris: [OOB_REDIRECT_URI],
+        confidential: true,
+      });
+      application = await getApplication(client);
+
+      wrongClient = await createOAuthApplication({
+        scopes: ["read:accounts"],
+        redirectUris: [OOB_REDIRECT_URI],
+        confidential: true,
+      });
+      wrongApplication = await getApplication(wrongClient);
+    });
+
+    afterEach(async () => {
+      await cleanDatabase();
+    });
+
+    it("can revoke an access token using client_secret_basic", async () => {
+      expect.assertions(4);
       const accessToken = await getAccessToken(client, account);
       const body = new FormData();
       body.set("token", accessToken.token);
@@ -792,22 +836,19 @@ describe("OAuth / POST /oauth/revoke", () => {
         body,
       });
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("application/json");
+      expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
       const accessTokenAfterRevocation = await findAccessToken(
         accessToken.token,
       );
 
-      t.assert.equal(accessTokenAfterRevocation, undefined);
-    },
-  );
+      expect(accessTokenAfterRevocation).toBe(undefined);
+    });
 
-  it(
-    "can revoke an access token using client_secret_post",
-    { plan: 4 },
-    async (t: TestContext) => {
+    it("can revoke an access token using client_secret_post", async () => {
+      expect.assertions(4);
       const accessToken = await getAccessToken(client, account);
       const body = new FormData();
       body.set("token", accessToken.token);
@@ -819,22 +860,19 @@ describe("OAuth / POST /oauth/revoke", () => {
         body,
       });
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("application/json");
+      expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
       const accessTokenAfterRevocation = await findAccessToken(
         accessToken.token,
       );
 
-      t.assert.equal(accessTokenAfterRevocation, undefined);
-    },
-  );
+      expect(accessTokenAfterRevocation).toBe(undefined);
+    });
 
-  it(
-    "cannot revoke an access token for a different client, but does not return any errors",
-    { plan: 4 },
-    async (t: TestContext) => {
+    it("cannot revoke an access token for a different client, but does not return any errors", async () => {
+      expect.assertions(4);
       const accessToken = await getAccessToken(client, account);
       const body = new FormData();
       body.set("token", accessToken.token);
@@ -846,22 +884,19 @@ describe("OAuth / POST /oauth/revoke", () => {
         body,
       });
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("application/json");
+      expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
       const accessTokenAfterRevocation = await findAccessToken(
         accessToken.token,
       );
 
-      t.assert.notEqual(accessTokenAfterRevocation, undefined);
-    },
-  );
+      expect(accessTokenAfterRevocation).not.toBe(undefined);
+    });
 
-  it(
-    "cannot revoke a token using token_type_hint of refresh_token",
-    { plan: 5 },
-    async (t: TestContext) => {
+    it("cannot revoke a token using token_type_hint of refresh_token", async () => {
+      expect.assertions(5);
       const body = new FormData();
       body.set("token", "123");
       body.set("token_type_hint", "refresh_token");
@@ -874,21 +909,18 @@ describe("OAuth / POST /oauth/revoke", () => {
         body,
       });
 
-      t.assert.equal(response.status, 400);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
+      expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
       const responseBody = await response.json();
 
-      t.assert.equal(typeof responseBody, "object");
-      t.assert.equal(responseBody.error, "unsupported_token_type");
-    },
-  );
+      expect(typeof responseBody).toBe("object");
+      expect(responseBody.error).toBe("unsupported_token_type");
+    });
 
-  it(
-    "cannot revoke a token without supplying the token parameter",
-    { plan: 5 },
-    async (t: TestContext) => {
+    it("cannot revoke a token without supplying the token parameter", async () => {
+      expect.assertions(5);
       const body = new FormData();
       // explicitly doesn't have `token`
       body.set("token_type_hint", "refresh_token");
@@ -901,14 +933,14 @@ describe("OAuth / POST /oauth/revoke", () => {
         body,
       });
 
-      t.assert.equal(response.status, 400);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toBe("application/json");
+      expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
       const responseBody = await response.json();
 
-      t.assert.equal(typeof responseBody, "object");
-      t.assert.equal(responseBody.error, "invalid_request");
-    },
-  );
+      expect(typeof responseBody).toBe("object");
+      expect(responseBody.error).toBe("invalid_request");
+    });
+  });
 });

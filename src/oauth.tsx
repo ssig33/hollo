@@ -1,43 +1,40 @@
 import { zValidator } from "@hono/zod-validator";
 import { getLogger } from "@logtape/logtape";
 import { and, eq } from "drizzle-orm";
-import { escape } from "es-toolkit";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { z } from "zod";
-import { Layout } from "./components/Layout";
-import { db } from "./db";
-import { requestBody } from "./helpers";
-import { loginRequired } from "./login";
-import { OOB_REDIRECT_URI } from "./oauth/constants";
+import { db } from "./db.ts";
+import { requestBody } from "./helpers.ts";
+import { loginRequired } from "./login.ts";
+import { OOB_REDIRECT_URI } from "./oauth/constants.ts";
 import {
   createAccessGrant,
   createAccessToken,
   createClientCredential,
-} from "./oauth/helpers";
+} from "./oauth/helpers.ts";
 import {
   type ClientAuthenticationVariables,
   clientAuthentication,
-} from "./oauth/middleware";
-import { scopesSchema } from "./oauth/validators";
+} from "./oauth/middleware.ts";
+import { scopesSchema } from "./oauth/validators.ts";
 import {
-  type Account,
-  type AccountOwner,
-  type Application,
-  type Scope,
   accessGrants,
   accessTokens,
   applications,
   scopeEnum,
-} from "./schema";
-import { renderCustomEmojis } from "./text";
-import { uuid } from "./uuid";
+} from "./schema.ts";
+import { uuid } from "./uuid.ts";
+
+import { AuthorizationPage } from "./pages/oauth/authorization.tsx";
+import { AuthorizationCodePage } from "./pages/oauth/authorization_code.tsx";
 
 const logger = getLogger(["hollo", "oauth"]);
 
 const app = new Hono<{ Variables: ClientAuthenticationVariables }>();
 
-/* c8 ignore start */
+/* v8 ignore start */
+
 app.get(
   "/authorize",
   zValidator(
@@ -79,81 +76,7 @@ app.get(
   },
 );
 
-interface AuthorizationPageProps {
-  accountOwners: (AccountOwner & { account: Account })[];
-  application: Application;
-  redirectUri: string;
-  scopes: Scope[];
-  state?: string;
-}
-
-function AuthorizationPage(props: AuthorizationPageProps) {
-  return (
-    <Layout title={`Hollo: Authorize ${props.application.name}`}>
-      <hgroup>
-        <h1>Authorize {props.application.name}</h1>
-        <p>Do you want to authorize this application to access your account?</p>
-      </hgroup>
-      <p>It allows the application to:</p>
-      <ul>
-        {props.scopes.map((scope) => (
-          <li key={scope}>
-            <code>{scope}</code>
-          </li>
-        ))}
-      </ul>
-      <form action="/oauth/authorize" method="post">
-        <p>Choose an account to authorize:</p>
-        {props.accountOwners.map((accountOwner, i) => {
-          const accountName = renderCustomEmojis(
-            escape(accountOwner.account.name),
-            accountOwner.account.emojis,
-          );
-          return (
-            <label>
-              <input
-                type="radio"
-                name="account_id"
-                value={accountOwner.id}
-                checked={i === 0}
-              />
-              {/* biome-ignore lint/security/noDangerouslySetInnerHtml: xss protected */}
-              <strong dangerouslySetInnerHTML={{ __html: accountName }} />
-              <p style="margin-left: 1.75em; margin-top: 0.25em;">
-                <small>{accountOwner.account.handle}</small>
-              </p>
-            </label>
-          );
-        })}
-        <input
-          type="hidden"
-          name="application_id"
-          value={props.application.id}
-        />
-        <input type="hidden" name="redirect_uri" value={props.redirectUri} />
-        <input type="hidden" name="scopes" value={props.scopes.join(" ")} />
-        {props.state != null && (
-          <input type="hidden" name="state" value={props.state} />
-        )}
-        <div role="group">
-          {props.redirectUri !== "urn:ietf:wg:oauth:2.0:oob" && (
-            <button
-              type="submit"
-              class="secondary"
-              name="decision"
-              value="deny"
-            >
-              Deny
-            </button>
-          )}
-          <button type="submit" name="decision" value="allow">
-            Allow
-          </button>
-        </div>
-      </form>
-    </Layout>
-  );
-}
+/* v8 ignore stop */
 
 app.post(
   "/authorize",
@@ -226,28 +149,6 @@ app.post(
     return c.redirect(url.href);
   },
 );
-
-interface AuthorizationCodePageProps {
-  application: Application;
-  code: string;
-}
-
-function AuthorizationCodePage(props: AuthorizationCodePageProps) {
-  return (
-    <Layout title={"Hollo: Authorization Code"}>
-      <hgroup>
-        <h1>Authorization Code</h1>
-        <p>Here is your authorization code.</p>
-      </hgroup>
-      <pre>{props.code}</pre>
-      <p>
-        Copy this code and paste it into <em>{props.application.name}</em>.
-      </p>
-    </Layout>
-  );
-}
-
-/* c8 ignore stop */
 
 const INVALID_GRANT_ERROR_DESCRIPTION =
   "The provided authorization code is invalid, expired, revoked, " +
@@ -326,8 +227,6 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
             );
           }
 
-          /* c8 ignore start */
-          // TODO: The test for this requires time travel
           const notAfter =
             accessGrant.created.valueOf() + accessGrant.expiresIn;
           if (Date.now() > notAfter) {
@@ -339,7 +238,6 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
               400,
             );
           }
-          /* c8 ignore stop */
 
           if (accessGrant.redirectUri !== form.redirect_uri) {
             return c.json(
@@ -362,7 +260,7 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
           // create the access token
           const accessToken = await createAccessToken(accessGrant, tx);
 
-          /* c8 ignore start */
+          /* v8 ignore start */
           // TODO: This scenario requires an insert to the database failing, so not sure how to test:
           if (accessToken === undefined) {
             return c.json(
@@ -374,7 +272,7 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
               500,
             );
           }
-          /* c8 ignore stop */
+          /* v8 ignore stop */
 
           return c.json(
             {
@@ -392,7 +290,7 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
           deferrable: true,
         },
       )
-      /* c8 ignore start */
+      /* v8 ignore start */
       /* I'm not sure how we'd ever test this scenario */
       .catch((err) => {
         logger.error("An unknown error occurred", err);
@@ -406,7 +304,7 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
           500,
         );
       });
-    /* c8 ignore stop */
+    /* v8 ignore stop */
   }
 
   if (form.grant_type === "client_credentials") {

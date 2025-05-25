@@ -1,5 +1,4 @@
-import { afterEach, beforeEach, describe, it } from "node:test";
-import type { TestContext } from "node:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { cleanDatabase } from "../../../tests/helpers";
 
@@ -17,290 +16,254 @@ import app from "../../index";
 import { OOB_REDIRECT_URI } from "../../oauth/constants";
 import type * as Schema from "../../schema";
 
-describe("POST /api/v1/apps", () => {
+describe.sequential("POST /api/v1/apps", () => {
   afterEach(async () => {
     await cleanDatabase();
   });
 
-  it(
-    "successfully creates a confidential client using FormData (by default)",
-    { plan: 10 },
-    async (t: TestContext) => {
-      const body = new FormData();
-      body.append("scopes", "read:accounts");
+  it("successfully creates a confidential client using FormData (by default)", async () => {
+    expect.assertions(10);
 
-      const response = await app.request("/api/v1/apps", {
-        method: "POST",
-        body,
-      });
+    const body = new FormData();
+    body.append("scopes", "read:accounts");
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    const response = await app.request("/api/v1/apps", {
+      method: "POST",
+      body,
+    });
 
-      const credentialApplication = await response.json();
-      const application = await getLastApplication();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
-      t.assert.equal(typeof credentialApplication, "object");
-      t.assert.equal(credentialApplication.id, application.id);
-      t.assert.deepEqual(
-        credentialApplication.redirect_uris,
-        application.redirectUris,
-      );
-      t.assert.equal(
-        credentialApplication.redirect_uri,
-        application.redirectUris.join(" "),
-      );
+    const credentialApplication = await response.json();
+    const application = await getLastApplication();
 
-      t.assert.deepEqual(application.redirectUris, []);
-      t.assert.deepEqual(application.scopes, ["read:accounts"]);
-      t.assert.equal(application.confidential, true);
-    },
-  );
+    expect(typeof credentialApplication).toBe("object");
+    expect(credentialApplication.id).toBe(application.id);
+    expect(credentialApplication.redirect_uris).toEqual(
+      application.redirectUris,
+    );
+    expect(credentialApplication.redirect_uri).toBe(
+      application.redirectUris.join(" "),
+    );
 
-  it(
-    "successfully creates a confidential client without duplicate scopes",
-    { plan: 7 },
-    async (t: TestContext) => {
-      const body = new FormData();
-      body.append("scopes", "read:accounts read:accounts");
+    expect(application.redirectUris).toEqual([]);
+    expect(application.scopes).toEqual(["read:accounts"]);
+    expect(application.confidential).toBe(true);
+  });
 
-      const response = await app.request("/api/v1/apps", {
-        method: "POST",
-        body,
-      });
+  it("successfully creates a confidential client without duplicate scopes", async () => {
+    expect.assertions(7);
+    const body = new FormData();
+    body.append("scopes", "read:accounts read:accounts");
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    const response = await app.request("/api/v1/apps", {
+      method: "POST",
+      body,
+    });
 
-      const credentialApplication = await response.json();
-      const application = await getLastApplication();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
-      t.assert.equal(typeof credentialApplication, "object");
-      t.assert.equal(credentialApplication.id, application.id);
+    const credentialApplication = await response.json();
+    const application = await getLastApplication();
 
-      t.assert.deepEqual(application.scopes, ["read:accounts"]);
-      t.assert.equal(application.confidential, true);
-    },
-  );
+    expect(typeof credentialApplication).toBe("object");
+    expect(credentialApplication.id).toBe(application.id);
 
-  it(
-    "successfully creates a confidential client using JSON (by default)",
-    { plan: 11 },
-    async (t: TestContext) => {
-      const body = JSON.stringify({ scopes: "read:accounts" });
+    expect(application.scopes).toEqual(["read:accounts"]);
+    expect(application.confidential).toBe(true);
+  });
 
-      const response = await app.request("/api/v1/apps", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body,
-      });
+  it("successfully creates a confidential client using JSON (by default)", async () => {
+    expect.assertions(11);
+    const body = JSON.stringify({ scopes: "read:accounts" });
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    const response = await app.request("/api/v1/apps", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body,
+    });
 
-      const credentialApplication = await response.json();
-      const application = await getLastApplication();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
-      t.assert.equal(typeof credentialApplication, "object");
-      t.assert.deepEqual(Object.keys(credentialApplication), [
-        "id",
-        "name",
-        "website",
-        "redirect_uris",
-        "redirect_uri",
-        "client_id",
-        // Note: for public clients, this won't be present:
-        "client_secret",
-        "vapid_key",
-      ]);
-      t.assert.equal(credentialApplication.id, application.id);
-      t.assert.deepEqual(
-        credentialApplication.redirect_uris,
-        application.redirectUris,
-      );
-      t.assert.equal(
-        credentialApplication.redirect_uri,
-        application.redirectUris.join(" "),
-      );
+    const credentialApplication = await response.json();
+    const application = await getLastApplication();
 
-      t.assert.deepEqual(application.redirectUris, []);
-      t.assert.deepEqual(application.scopes, ["read:accounts"]);
-      t.assert.equal(application.confidential, true);
-    },
-  );
+    expect(typeof credentialApplication).toBe("object");
+    expect(Object.keys(credentialApplication)).toEqual([
+      "id",
+      "name",
+      "website",
+      "redirect_uris",
+      "redirect_uri",
+      "client_id",
+      // Note: for public clients, this won't be present:
+      "client_secret",
+      "vapid_key",
+    ]);
 
-  it(
-    "successfully creates an application with read scope by default",
-    { plan: 10 },
-    async (t: TestContext) => {
-      const body = new FormData();
-      body.append("redirect_uris", OOB_REDIRECT_URI);
+    expect(credentialApplication.id).toBe(application.id);
+    expect(credentialApplication.redirect_uris).toEqual(
+      application.redirectUris,
+    );
+    expect(credentialApplication.redirect_uri).toBe(
+      application.redirectUris.join(" "),
+    );
 
-      const response = await app.request("/api/v1/apps", {
-        method: "POST",
-        body,
-      });
+    expect(application.redirectUris).toEqual([]);
+    expect(application.scopes).toEqual(["read:accounts"]);
+    expect(application.confidential).toBe(true);
+  });
 
-      t.assert.equal(response.status, 200);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+  it("successfully creates an application with read scope by default", async () => {
+    expect.assertions(10);
+    const body = new FormData();
+    body.append("redirect_uris", OOB_REDIRECT_URI);
 
-      const credentialApplication = await response.json();
-      const application = await getLastApplication();
+    const response = await app.request("/api/v1/apps", {
+      method: "POST",
+      body,
+    });
 
-      t.assert.equal(typeof credentialApplication, "object");
-      t.assert.equal(credentialApplication.id, application.id);
-      t.assert.deepEqual(
-        credentialApplication.redirect_uris,
-        application.redirectUris,
-      );
-      t.assert.equal(
-        credentialApplication.redirect_uri,
-        application.redirectUris.join(" "),
-      );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
-      t.assert.deepEqual(application.redirectUris, [OOB_REDIRECT_URI]);
-      t.assert.deepEqual(application.scopes, ["read"]);
-      t.assert.equal(application.confidential, true);
-    },
-  );
+    const credentialApplication = await response.json();
+    const application = await getLastApplication();
+
+    expect(typeof credentialApplication).toBe("object");
+    expect(credentialApplication.id).toBe(application.id);
+    expect(credentialApplication.redirect_uris).toEqual(
+      application.redirectUris,
+    );
+    expect(credentialApplication.redirect_uri).toBe(
+      application.redirectUris.join(" "),
+    );
+
+    expect(application.redirectUris).toEqual([OOB_REDIRECT_URI]);
+    expect(application.scopes).toEqual(["read"]);
+    expect(application.confidential).toBe(true);
+  });
 
   // TODO: Support public clients
   it.skip("successfully creates a public client application");
 
   // Validation
-  it(
-    "prevents creating an application with invalid scopes",
-    { plan: 6 },
-    async (t: TestContext) => {
-      const prevAppCount = await countApplications();
-      const body = new FormData();
-      body.append("scopes", "invalid read:accounts");
+  it("prevents creating an application with invalid scopes", async () => {
+    expect.assertions(6);
 
-      const response = await app.request("/api/v1/apps", {
-        method: "POST",
-        body,
-      });
+    const prevAppCount = await countApplications();
+    const body = new FormData();
+    body.append("scopes", "invalid read:accounts");
 
-      t.assert.equal(response.status, 422);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    const response = await app.request("/api/v1/apps", {
+      method: "POST",
+      body,
+    });
 
-      const error = await response.json();
-      const appCount = await countApplications();
+    expect(response.status).toBe(422);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
-      t.assert.equal(typeof error, "object");
-      t.assert.equal(error.error, "invalid_request");
+    const error = await response.json();
+    const appCount = await countApplications();
 
-      t.assert.equal(
-        appCount,
-        prevAppCount,
-        "Should not change the number of applications registered",
-      );
-    },
-  );
+    expect(typeof error).toBe("object");
+    expect(error.error).toBe("invalid_request");
 
-  it(
-    "prevents creating an application with invalid redirect_uris",
-    { plan: 6 },
-    async (t: TestContext) => {
-      const prevAppCount = await countApplications();
-      const body = new FormData();
-      body.append("redirect_uris", "invalid");
+    // Should not change the number of applications registered
+    expect(appCount).toBe(prevAppCount);
+  });
 
-      const response = await app.request("/api/v1/apps", {
-        method: "POST",
-        body,
-      });
+  it("prevents creating an application with invalid redirect_uris", async () => {
+    expect.assertions(6);
 
-      t.assert.equal(response.status, 422);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    const prevAppCount = await countApplications();
+    const body = new FormData();
+    body.append("redirect_uris", "invalid");
 
-      const error = await response.json();
-      const appCount = await countApplications();
+    const response = await app.request("/api/v1/apps", {
+      method: "POST",
+      body,
+    });
 
-      t.assert.equal(typeof error, "object");
-      t.assert.equal(error.error, "invalid_request");
+    expect(response.status).toBe(422);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
-      t.assert.equal(
-        appCount,
-        prevAppCount,
-        "Should not change the number of applications registered",
-      );
-    },
-  );
+    const error = await response.json();
+    const appCount = await countApplications();
 
-  it(
-    "prevents creating an application if any of the redirect_uris are invalid",
-    { plan: 6 },
-    async (t: TestContext) => {
-      const prevAppCount = await countApplications();
-      const body = JSON.stringify({
-        redirect_uris: [OOB_REDIRECT_URI, "invalid"],
-      });
+    expect(typeof error).toBe("object");
+    expect(error.error).toBe("invalid_request");
 
-      const response = await app.request("/api/v1/apps", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body,
-      });
+    // Should not change the number of applications registered
+    expect(appCount).toBe(prevAppCount);
+  });
 
-      t.assert.equal(response.status, 422);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+  it("prevents creating an application if any of the redirect_uris are invalid", async () => {
+    expect.assertions(6);
 
-      const error = await response.json();
-      const appCount = await countApplications();
+    const prevAppCount = await countApplications();
+    const body = JSON.stringify({
+      redirect_uris: [OOB_REDIRECT_URI, "invalid"],
+    });
 
-      t.assert.equal(typeof error, "object");
-      t.assert.equal(error.error, "invalid_request");
+    const response = await app.request("/api/v1/apps", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body,
+    });
 
-      t.assert.equal(
-        appCount,
-        prevAppCount,
-        "Should not change the number of applications registered",
-      );
-    },
-  );
+    expect(response.status).toBe(422);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
-  it(
-    "prevents creating an application with invalid parameters",
-    { plan: 6 },
-    async (t: TestContext) => {
-      const prevAppCount = await countApplications();
-      const body = new FormData();
-      body.append("invalid_property", "invalid");
+    const error = await response.json();
+    const appCount = await countApplications();
 
-      const response = await app.request("/api/v1/apps", {
-        method: "POST",
-        body,
-      });
+    expect(typeof error).toBe("object");
+    expect(error.error).toBe("invalid_request");
 
-      t.assert.equal(response.status, 422);
-      t.assert.equal(response.headers.get("content-type"), "application/json");
-      t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    // Should not change the number of applications registered
+    expect(appCount).toBe(prevAppCount);
+  });
 
-      const error = await response.json();
-      const appCount = await countApplications();
+  it("prevents creating an application with invalid parameters", async () => {
+    expect.assertions(6);
 
-      t.assert.equal(typeof error, "object");
-      t.assert.equal(error.error, "invalid_request");
+    const prevAppCount = await countApplications();
+    const body = new FormData();
+    body.append("invalid_property", "invalid");
 
-      t.assert.equal(
-        appCount,
-        prevAppCount,
-        "Should not change the number of applications registered",
-      );
-    },
-  );
+    const response = await app.request("/api/v1/apps", {
+      method: "POST",
+      body,
+    });
+
+    expect(response.status).toBe(422);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+
+    const error = await response.json();
+    const appCount = await countApplications();
+
+    expect(typeof error).toBe("object");
+    expect(error.error).toBe("invalid_request");
+
+    // Should not change the number of applications registered
+    expect(appCount).toBe(prevAppCount);
+  });
 });
 
 /**
@@ -308,7 +271,7 @@ describe("POST /api/v1/apps", () => {
  * Client Authentication (client_id, client_secret) without needing an access
  * token, but currently the Mastodon API requires an access token.
  */
-describe("GET /api/v1/apps/verify_credentials", () => {
+describe.sequential("GET /api/v1/apps/verify_credentials", () => {
   let client: Awaited<ReturnType<typeof createOAuthApplication>>;
   let application: Schema.Application;
   let account: Awaited<ReturnType<typeof createAccount>>;
@@ -326,18 +289,15 @@ describe("GET /api/v1/apps/verify_credentials", () => {
     await cleanDatabase();
   });
 
-  async function actsLikeAnApplicationResponse(
-    t: TestContext,
-    response: Response,
-  ) {
-    t.assert.equal(response.status, 200);
-    t.assert.equal(response.headers.get("content-type"), "application/json");
-    t.assert.equal(response.headers.get("access-control-allow-origin"), "*");
+  async function actsLikeAnApplicationResponse(response: Response) {
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
     const applicationEntity = await response.json();
 
-    t.assert.equal(typeof applicationEntity, "object");
-    t.assert.deepEqual(Object.keys(applicationEntity), [
+    expect(typeof applicationEntity).toBe("object");
+    expect(Object.keys(applicationEntity)).toEqual([
       "id",
       "name",
       "website",
@@ -346,48 +306,39 @@ describe("GET /api/v1/apps/verify_credentials", () => {
       "redirect_uri",
     ]);
 
-    t.assert.equal(applicationEntity.id, application.id);
-    t.assert.equal(applicationEntity.name, application.name);
-    t.assert.equal(applicationEntity.website, application.website);
-    t.assert.ok(Array.isArray(applicationEntity.scopes));
-    t.assert.ok(Array.isArray(applicationEntity.redirect_uris));
-    t.assert.deepEqual(applicationEntity.scopes, application.scopes);
-    t.assert.deepEqual(
-      applicationEntity.redirect_uris,
-      application.redirectUris,
-    );
-    t.assert.equal(typeof applicationEntity.redirect_uri, "string");
+    expect(applicationEntity.id).toBe(application.id);
+    expect(applicationEntity.name).toBe(application.name);
+    expect(applicationEntity.website).toBe(application.website);
+    expect(Array.isArray(applicationEntity.scopes)).toBeTruthy();
+    expect(Array.isArray(applicationEntity.redirect_uris)).toBeTruthy();
+    expect(applicationEntity.scopes).toEqual(application.scopes);
+    expect(applicationEntity.redirect_uris).toEqual(application.redirectUris);
+    expect(typeof applicationEntity.redirect_uri).toBe("string");
   }
 
-  it(
-    "successfully returns an application using client credentials",
-    { plan: 13 },
-    async (t: TestContext) => {
-      const clientCredential = await getClientCredentialToken(client);
-      const response = await app.request("/api/v1/apps/verify_credentials", {
-        method: "GET",
-        headers: {
-          authorization: bearerAuthorization(clientCredential),
-        },
-      });
+  it("successfully returns an application using client credentials", async () => {
+    expect.assertions(13);
+    const clientCredential = await getClientCredentialToken(client);
+    const response = await app.request("/api/v1/apps/verify_credentials", {
+      method: "GET",
+      headers: {
+        authorization: bearerAuthorization(clientCredential),
+      },
+    });
 
-      await actsLikeAnApplicationResponse(t, response);
-    },
-  );
+    await actsLikeAnApplicationResponse(response);
+  });
 
-  it(
-    "successfully returns an application using an access token",
-    { plan: 13 },
-    async (t: TestContext) => {
-      const accessToken = await getAccessToken(client, account);
-      const response = await app.request("/api/v1/apps/verify_credentials", {
-        method: "GET",
-        headers: {
-          authorization: bearerAuthorization(accessToken),
-        },
-      });
+  it("successfully returns an application using an access token", async () => {
+    expect.assertions(13);
+    const accessToken = await getAccessToken(client, account);
+    const response = await app.request("/api/v1/apps/verify_credentials", {
+      method: "GET",
+      headers: {
+        authorization: bearerAuthorization(accessToken),
+      },
+    });
 
-      await actsLikeAnApplicationResponse(t, response);
-    },
-  );
+    await actsLikeAnApplicationResponse(response);
+  });
 });
