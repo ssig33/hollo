@@ -50,8 +50,7 @@ const CorsPolicy = (allowMethods: string[]) =>
 app.use("/.well-known/*", CorsPolicy(["GET"]));
 app.use("/nodeinfo/*", CorsPolicy(["GET"]));
 app.use("/oauth/token", CorsPolicy(["POST"]));
-// Hollo doesn't support token revocation currently:
-// app.use("/oauth/revoke", CorsPolicy(["POST"]));
+app.use("/oauth/revoke", CorsPolicy(["POST"]));
 app.use("/oauth/userinfo", CorsPolicy(["GET", "POST"]));
 
 app.route("/.well-known/oauth-authorization-server", oauthMetadataEndpoint);
