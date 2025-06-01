@@ -1,10 +1,11 @@
 import { exportJwk, generateCryptoKeyPair } from "@fedify/fedify";
-import { base64 } from "@hexagon/base64";
 import { count, desc, eq } from "drizzle-orm";
 
 import db from "../../src/db";
 import * as Schema from "../../src/schema";
 
+import { base64 } from "@hexagon/base64";
+import { randomBytes } from "../../src/helpers";
 import { OOB_REDIRECT_URI } from "../../src/oauth/constants";
 import {
   type AccessGrant,
@@ -16,9 +17,9 @@ import {
 export function basicAuthorization(
   application: Pick<Schema.Application, "clientId" | "clientSecret">,
 ) {
-  const credential = Buffer.from(
+  const credential = base64.fromString(
     `${application.clientId}:${application.clientSecret}`,
-  ).toString("base64");
+  );
 
   return `Basic ${credential}`;
 }
@@ -129,17 +130,8 @@ export async function createOAuthApplication(
     redirectUris: [OOB_REDIRECT_URI],
   },
 ): Promise<Pick<Schema.Application, "id">> {
-  const clientId = base64.fromArrayBuffer(
-    crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer,
-    true,
-  );
-  const clientSecret =
-    options.confidential === true
-      ? base64.fromArrayBuffer(
-          crypto.getRandomValues(new Uint8Array(32)).buffer as ArrayBuffer,
-          true,
-        )
-      : "";
+  const clientId = randomBytes(16);
+  const clientSecret = options.confidential === true ? randomBytes(32) : "";
 
   const app = await db
     .insert(Schema.applications)

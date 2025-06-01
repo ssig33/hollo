@@ -1,3 +1,4 @@
+import { base64 } from "@hexagon/base64";
 import type { HonoRequest } from "hono";
 import type z from "zod";
 
@@ -17,4 +18,15 @@ export async function requestBody<T extends z.ZodType = z.ZodTypeAny>(
 
   const formData = await req.parseBody();
   return await schema.safeParseAsync(formData);
+}
+
+// URL safe in ABNF is: ALPHA / DIGIT / "-" / "." / "_" / "~"
+export const URL_SAFE_REGEXP = /[A-Za-z0-9\_\-\.\~]/;
+
+export function base64Url(buffer: ArrayBuffer) {
+  return base64.fromArrayBuffer(buffer, true);
+}
+
+export function randomBytes(length: number): string {
+  return base64Url(crypto.getRandomValues(new Uint8Array(length)).buffer);
 }

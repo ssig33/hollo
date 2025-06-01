@@ -1,8 +1,8 @@
-import { base64 } from "@hexagon/base64";
 import { getLogger } from "@logtape/logtape";
 
 import { lt } from "drizzle-orm";
 import db, { type Transaction } from "../db";
+import { base64Url, randomBytes } from "../helpers";
 import * as schema from "../schema";
 import type { Uuid } from "../uuid";
 import {
@@ -19,13 +19,6 @@ export type AccessGrant = {
   expiry: Date;
 };
 
-export function randomBytes(length: number): string {
-  return base64.fromArrayBuffer(
-    crypto.getRandomValues(new Uint8Array(length)).buffer as ArrayBuffer,
-    true,
-  );
-}
-
 export function generatePKCECodeVerifier() {
   return randomBytes(32);
 }
@@ -33,9 +26,8 @@ export function generatePKCECodeVerifier() {
 const textEncoder = new TextEncoder();
 
 export async function calculatePKCECodeChallenge(codeVerifier: string) {
-  return base64.fromArrayBuffer(
+  return base64Url(
     await crypto.subtle.digest("SHA-256", textEncoder.encode(codeVerifier)),
-    true,
   );
 }
 

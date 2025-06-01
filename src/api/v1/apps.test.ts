@@ -12,6 +12,7 @@ import {
   getClientCredentialToken,
   getLastApplication,
 } from "../../../tests/helpers/oauth";
+import { URL_SAFE_REGEXP } from "../../helpers";
 import app from "../../index";
 import { OOB_REDIRECT_URI } from "../../oauth/constants";
 import type * as Schema from "../../schema";
@@ -22,7 +23,7 @@ describe.sequential("POST /api/v1/apps", () => {
   });
 
   it("successfully creates a confidential client using FormData (by default)", async () => {
-    expect.assertions(10);
+    expect.assertions(12);
 
     const body = new FormData();
     body.append("scopes", "read:accounts");
@@ -38,6 +39,9 @@ describe.sequential("POST /api/v1/apps", () => {
 
     const credentialApplication = await response.json();
     const application = await getLastApplication();
+
+    expect(application.clientId).to.match(URL_SAFE_REGEXP);
+    expect(application.clientSecret).to.match(URL_SAFE_REGEXP);
 
     expect(typeof credentialApplication).toBe("object");
     expect(credentialApplication.id).toBe(application.id);
