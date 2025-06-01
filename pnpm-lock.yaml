@@ -35,9 +35,12 @@ importers:
       '@js-temporal/polyfill':
         specifier: ^0.5.0
         version: 0.5.1
+      '@logtape/file':
+        specifier: ~0.10.0
+        version: 0.10.0
       '@logtape/logtape':
-        specifier: ~0.8.2
-        version: 0.8.2
+        specifier: ~0.10.0
+        version: 0.10.0
       '@logtape/sentry':
         specifier: ^0.1.0
         version: 0.1.0
@@ -1327,6 +1330,12 @@ packages:
   '@js-temporal/polyfill@0.5.1':
     resolution: {integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==}
     engines: {node: '>=12'}
+
+  '@logtape/file@0.10.0':
+    resolution: {integrity: sha512-u+rniMrLHt4dAWACbWM/VQdT45oYhInankiSEFBbfh9eewAKWtihKebc4g0lvlE3BcsYL8iH3L7L+JRheO3cDg==}
+
+  '@logtape/logtape@0.10.0':
+    resolution: {integrity: sha512-zk8YILUU7TACEDPaI7sPO6Jyxj6+gwXeS82/ANAtIs3oyLqbUp1kzi5RWUjRj7yu8R7Hd0C4cX4fmfOo9S7COA==}
 
   '@logtape/logtape@0.8.2':
     resolution: {integrity: sha512-KikaMHi64p0BHYrYOE2Lom4dOE3R8PGT+21QJ5Ql/SWy0CNOp69dkAlG9RXzENQ6PAMWtiU+4kelJYNvfUvHOQ==}
@@ -4777,6 +4786,12 @@ snapshots:
   '@js-temporal/polyfill@0.5.1':
     dependencies:
       jsbi: 4.3.0
+
+  '@logtape/file@0.10.0':
+    dependencies:
+      '@logtape/logtape': 0.10.0
+
+  '@logtape/logtape@0.10.0': {}
 
   '@logtape/logtape@0.8.2': {}
 
