@@ -35,6 +35,7 @@ const textEncoder = new TextEncoder();
 export async function calculatePKCECodeChallenge(codeVerifier: string) {
   return base64.fromArrayBuffer(
     await crypto.subtle.digest("SHA-256", textEncoder.encode(codeVerifier)),
+    true,
   );
 }
 
