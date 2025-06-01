@@ -141,7 +141,7 @@ describe.sequential("OAuth", () => {
         throw new Error("Invariant error: form was not null but not found");
       }
 
-      expect(form.getAttribute("action"), "/oauth/authorize");
+      expect(form.getAttribute("action")).toEqual("/oauth/authorize");
 
       const accountSelectors = Array.from(
         form.querySelectorAll("input[name=account_id]"),
@@ -209,7 +209,7 @@ describe.sequential("OAuth", () => {
         throw new Error("Invariant error: form was not null but not found");
       }
 
-      expect(form.getAttribute("action"), "/oauth/authorize");
+      expect(form.getAttribute("action")).toEqual("/oauth/authorize");
 
       const accountSelectors = Array.from(
         form.querySelectorAll("input[name=account_id]"),
@@ -251,7 +251,7 @@ describe.sequential("OAuth", () => {
         throw new Error("Invariant error: form was not null but not found");
       }
 
-      expect(form.getAttribute("action"), "/oauth/authorize");
+      expect(form.getAttribute("action")).toEqual("/oauth/authorize");
 
       expect(
         form.querySelector("input[name=redirect_uri]")?.getAttribute("value"),
@@ -298,7 +298,7 @@ describe.sequential("OAuth", () => {
         throw new Error("Invariant error: form was not null but not found");
       }
 
-      expect(form.getAttribute("action"), "/oauth/authorize");
+      expect(form.getAttribute("action")).toEqual("/oauth/authorize");
 
       const listedScopes = Array.from(
         page.querySelectorAll("#scopes > li > code"),
@@ -347,7 +347,7 @@ describe.sequential("OAuth", () => {
         throw new Error("Invariant error: form was not null but not found");
       }
 
-      expect(form.getAttribute("action"), "/oauth/authorize");
+      expect(form.getAttribute("action")).toEqual("/oauth/authorize");
 
       expect(
         form.querySelector("input[name=state]")?.getAttribute("value"),
@@ -392,7 +392,7 @@ describe.sequential("OAuth", () => {
         throw new Error("Invariant error: form was not null but not found");
       }
 
-      expect(form.getAttribute("action"), "/oauth/authorize");
+      expect(form.getAttribute("action")).toEqual("/oauth/authorize");
 
       expect(
         form.querySelector("input[name=code_challenge]")?.getAttribute("value"),
