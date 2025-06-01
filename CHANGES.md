@@ -54,7 +54,7 @@ To be released.
  -  EXIF metadata of attached images are now stripped before storing them
     to prevent privacy leaks.  [[#152] by NTSK]
 
- -  Upgraded Fedify to 1.5.1 and *@fedify/postgres* to 0.3.0.
+ -  Upgraded Fedify to 1.5.3 and *@fedify/postgres* to 0.3.0.
 
  -  The minimum required version of Node.js is now 24.0.0.
 
