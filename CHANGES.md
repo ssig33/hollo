@@ -54,11 +54,17 @@ To be released.
  -  EXIF metadata of attached images are now stripped before storing them
     to prevent privacy leaks.  [[#152] by NTSK]
 
+ -  Code blocks inside Markdown are now highlighted.  The syntax highlighting is
+    powered By [Shiki].  See also the [complete list of supported languages].
+    [[#149]]
+
  -  Upgraded Fedify to 1.5.3 and *@fedify/postgres* to 0.3.0.
 
  -  The minimum required version of Node.js is now 24.0.0.
 
 [*Colors* section]: https://picocss.com/docs/colors
+[Shiki]: https://shiki.style/
+[complete list of supported languages]: https://shiki.style/languages
 [#50]: https://github.com/fedify-dev/hollo/issues/50
 [#110]: https://github.com/fedify-dev/hollo/pull/110
 [#111]: https://github.com/fedify-dev/hollo/issues/111
@@ -71,6 +77,7 @@ To be released.
 [#130]: https://github.com/fedify-dev/hollo/pull/130
 [#136]: https://github.com/fedify-dev/hollo/issues/136
 [#137]: https://github.com/fedify-dev/hollo/pull/137
+[#149]: https://github.com/fedify-dev/hollo/issues/149
 [#152]: https://github.com/fedify-dev/hollo/pull/152
 
 

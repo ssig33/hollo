@@ -5,7 +5,8 @@
 
 .logout-btn {
   margin: 0;
-  padding: var(--pico-nav-link-spacing-vertical) var(--pico-nav-link-spacing-horizontal);
+  padding: var(--pico-nav-link-spacing-vertical)
+    var(--pico-nav-link-spacing-horizontal);
   display: inline-block;
   width: auto !important;
 }
@@ -17,3 +18,16 @@ footer {
   font-size: 0.75rem;
   text-align: center;
 }
+
+@media (prefers-color-scheme: dark) {
+  .shiki,
+  .shiki span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+}
+
+/* cSpell: ignore shiki */
