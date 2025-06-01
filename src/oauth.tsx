@@ -34,14 +34,30 @@ const logger = getLogger(["hollo", "oauth"]);
 
 const app = new Hono<{ Variables: ClientAuthenticationVariables }>();
 
-const hasMissingPKCEParameter = (
-  code_challenge?: string,
-  code_challenge_method?: string,
+const validatePKCEParameters = (
+  form: Partial<{ code_challenge: string; code_challenge_method: string }>,
 ) => {
-  return (
-    (code_challenge && !code_challenge_method) ||
-    (code_challenge_method && !code_challenge)
-  );
+  if (
+    (form.code_challenge && form.code_challenge_method === undefined) ||
+    (form.code_challenge_method && form.code_challenge === undefined)
+  ) {
+    return {
+      error: "invalid_request",
+      error_description:
+        "Missing code_challenge or code_challenge_method parameters",
+    };
+  }
+
+  if (
+    form.code_challenge_method !== undefined &&
+    form.code_challenge_method !== "S256"
+  ) {
+    return {
+      error: "invalid_request",
+      error_description:
+        "PKCE code_challenge_method must be S256, other methods are not supported",
+    };
+  }
 };
 
 app.get(
@@ -56,7 +72,7 @@ app.get(
       state: z.string().optional(),
       // PKCE: we only support S256 code challenges
       code_challenge: z.string().optional(),
-      code_challenge_method: z.literal("S256").optional(),
+      code_challenge_method: z.string().optional(),
     }),
   ),
   loginRequired,
@@ -79,17 +95,9 @@ app.get(
       return c.json({ error: "invalid_redirect_uri" }, 400);
     }
 
-    if (
-      hasMissingPKCEParameter(data.code_challenge, data.code_challenge_method)
-    ) {
-      return c.json(
-        {
-          error: "invalid_request",
-          error_description:
-            "Missing code_challenge or code_challenge_method parameter",
-        },
-        400,
-      );
+    const pkceValidationError = validatePKCEParameters(data);
+    if (pkceValidationError) {
+      return c.json(pkceValidationError, 400);
     }
 
     const accountOwners = await db.query.accountOwners.findMany({
@@ -123,25 +131,12 @@ app.post(
       state: z.string().optional(),
       // we only support S256:
       code_challenge: z.string().optional(),
-      code_challenge_method: z.literal("S256").optional(),
+      code_challenge_method: z.string().optional(),
       decision: z.enum(["allow", "deny"]),
     }),
   ),
   async (c) => {
     const form = c.req.valid("form");
-
-    if (
-      hasMissingPKCEParameter(form.code_challenge, form.code_challenge_method)
-    ) {
-      return c.json(
-        {
-          error: "invalid_request",
-          error_description:
-            "Missing code_challenge or code_challenge_method parameters",
-        },
-        400,
-      );
-    }
 
     const application = await db.query.applications.findFirst({
       where: eq(applications.id, form.application_id),
@@ -155,6 +150,11 @@ app.post(
     });
     if (accountOwner == null) {
       return c.notFound();
+    }
+
+    const pkceValidationError = validatePKCEParameters(form);
+    if (pkceValidationError) {
+      return c.json(pkceValidationError, 400);
     }
 
     if (form.scopes.some((s) => !application.scopes.includes(s))) {
@@ -279,7 +279,10 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
           }
 
           if (accessGrant.codeChallenge && accessGrant.codeChallengeMethod) {
-            if (!form.code_verifier) {
+            if (
+              !form.code_verifier ||
+              accessGrant.codeChallengeMethod !== "S256"
+            ) {
               return c.json(INVALID_GRANT_ERROR, 400);
             }
 

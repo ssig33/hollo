@@ -557,6 +557,38 @@ describe.sequential("OAuth", () => {
         error: "invalid_request",
       });
     });
+
+    it("returns an error with incorrect PKCE code_challenge_method", async () => {
+      expect.assertions(2);
+
+      const cookie = await getLoginCookie();
+
+      const parameters = new URLSearchParams();
+
+      parameters.set("response_type", "code");
+      parameters.set("client_id", application.clientId);
+      parameters.set("redirect_uri", OOB_REDIRECT_URI);
+      parameters.set("code_challenge", "test");
+      parameters.set("code_challenge_method", "unknown");
+      parameters.set("scope", "read:accounts");
+
+      const response = await app.request(
+        `/oauth/authorize?${parameters.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            Cookie: cookie,
+          },
+        },
+      );
+
+      expect(response.status).toBe(400);
+
+      const json = await response.json();
+      expect(json).toMatchObject({
+        error: "invalid_request",
+      });
+    });
   });
 
   describe.sequential("POST /oauth/authorize", () => {
