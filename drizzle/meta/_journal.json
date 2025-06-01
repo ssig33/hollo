@@ -477,6 +477,13 @@
       "when": 1748209114780,
       "tag": "0067_add_pkce_to_access_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1748827411086,
+      "tag": "0068_add_profile_scope",
+      "breakpoints": true
     }
   ]
 }

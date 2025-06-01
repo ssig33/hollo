@@ -43,20 +43,20 @@ export async function createAccount(
       await tx
         .insert(Schema.instances)
         .values({
-          host: "http://hollo.test",
+          host: "hollo.test",
           software: "hollo",
           softwareVersion: null,
         })
         .onConflictDoNothing();
 
       const accountId = crypto.randomUUID();
-      const accountIri = `http://hollo.test/@${username}`;
+      const accountIri = `https://hollo.test/@${username}`;
       const accountUrl = `https://hollo.test/@${username}`;
 
       await tx.insert(Schema.accounts).values({
         id: accountId,
         iri: accountIri,
-        instanceHost: "http://hollo.test",
+        instanceHost: "hollo.test",
         type: "Person",
         name: `Test: ${username}`,
         emojis: {},

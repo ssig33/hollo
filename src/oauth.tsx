@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { z } from "zod";
+
 import { db } from "./db.ts";
 import { requestBody } from "./helpers.ts";
 import { loginRequired } from "./login.ts";
@@ -26,6 +27,8 @@ import {
   scopeEnum,
 } from "./schema.ts";
 import { uuid } from "./uuid.ts";
+
+import userInfoEndpoint from "./oauth/endpoints/userinfo.ts";
 
 import { AuthorizationPage } from "./pages/oauth/authorization.tsx";
 import { AuthorizationCodePage } from "./pages/oauth/authorization_code.tsx";
@@ -59,6 +62,8 @@ const validatePKCEParameters = (
     };
   }
 };
+
+app.route("/userinfo", userInfoEndpoint);
 
 app.get(
   "/authorize",

@@ -290,6 +290,7 @@ export const scopeEnum = pgEnum("scope", [
   "write:statuses",
   "follow",
   "push",
+  "profile",
 ]);
 
 export type Scope = (typeof scopeEnum.enumValues)[number];

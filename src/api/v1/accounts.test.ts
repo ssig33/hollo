@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { cleanDatabase } from "../../../tests/helpers";
 import {
@@ -15,14 +15,12 @@ describe.sequential("/api/v1/accounts/verify_credentials", () => {
   let account: Awaited<ReturnType<typeof createAccount>>;
 
   beforeEach(async () => {
+    await cleanDatabase();
+
     account = await createAccount();
     client = await createOAuthApplication({
-      scopes: ["read:accounts", "write"],
+      scopes: ["read:accounts", "write", "profile"],
     });
-  });
-
-  afterEach(async () => {
-    await cleanDatabase();
   });
 
   it("Successfully returns the current accounts profile with a valid access token", async () => {
@@ -31,6 +29,30 @@ describe.sequential("/api/v1/accounts/verify_credentials", () => {
     const accessToken = await getAccessToken(client, account, [
       "read:accounts",
     ]);
+
+    const response = await app.request("/api/v1/accounts/verify_credentials", {
+      method: "GET",
+      headers: {
+        authorization: bearerAuthorization(accessToken),
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+
+    const credentialAccount = await response.json();
+
+    expect(typeof credentialAccount).toBe("object");
+    expect(credentialAccount.id).toBe(account.id);
+    expect(credentialAccount.username).toBe("hollo");
+    expect(credentialAccount.acct).toBe("hollo@hollo.test");
+  });
+
+  it("Successfully returns the current accounts profile with an access token using profile scope", async () => {
+    expect.assertions(7);
+
+    const accessToken = await getAccessToken(client, account, ["profile"]);
 
     const response = await app.request("/api/v1/accounts/verify_credentials", {
       method: "GET",
