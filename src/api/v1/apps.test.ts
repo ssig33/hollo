@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { cleanDatabase } from "../../../tests/helpers";
 
@@ -18,7 +18,7 @@ import { OOB_REDIRECT_URI } from "../../oauth/constants";
 import type * as Schema from "../../schema";
 
 describe.sequential("POST /api/v1/apps", () => {
-  afterEach(async () => {
+  beforeEach(async () => {
     await cleanDatabase();
   });
 
@@ -281,16 +281,14 @@ describe.sequential("GET /api/v1/apps/verify_credentials", () => {
   let account: Awaited<ReturnType<typeof createAccount>>;
 
   beforeEach(async () => {
+    await cleanDatabase();
+
     account = await createAccount();
     client = await createOAuthApplication({
       scopes: ["read:accounts"],
       confidential: true,
     });
     application = await getApplication(client);
-  });
-
-  afterEach(async () => {
-    await cleanDatabase();
   });
 
   async function actsLikeAnApplicationResponse(response: Response) {

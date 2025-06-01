@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { getFixtureFile } from "../../tests/helpers";
 import { getLoginCookie } from "../../tests/helpers/web";
@@ -14,10 +14,10 @@ const emojiFile = await getFixtureFile("emoji.png", "image/png");
 describe.sequential("emojis", () => {
   beforeEach(async () => {
     await db.delete(customEmojis);
-  });
 
-  afterEach(() => {
-    drive.restore();
+    return () => {
+      drive.restore();
+    };
   });
 
   it("Successfully saves a new emoji", async () => {

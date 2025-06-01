@@ -1,6 +1,6 @@
 import { parseHTML } from "linkedom";
 import * as timekeeper from "timekeeper";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import app from "./index";
 import type * as Schema from "./schema";
@@ -38,6 +38,8 @@ describe.sequential("OAuth", () => {
     let account: Awaited<ReturnType<typeof createAccount>>;
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read", "read:accounts", "follow"],
@@ -45,10 +47,6 @@ describe.sequential("OAuth", () => {
         confidential: true,
       });
       application = await getApplication(client);
-    });
-
-    afterEach(async () => {
-      await cleanDatabase();
     });
 
     it("successfully displays an authorization page", async () => {
@@ -547,6 +545,8 @@ describe.sequential("OAuth", () => {
     const APP_REDIRECT_URI = "custom://oauth_callback";
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read:accounts"],
@@ -554,10 +554,6 @@ describe.sequential("OAuth", () => {
         confidential: true,
       });
       application = await getApplication(client);
-    });
-
-    afterEach(async () => {
-      await cleanDatabase();
     });
 
     it("Does not create an access grant if denied", async () => {
@@ -716,7 +712,11 @@ describe.sequential("OAuth", () => {
     });
 
     it("returns an error if the application does not exist", async () => {
-      expect.assertions(1);
+      expect.assertions(2);
+
+      // This is an incredibly small chance, but just to make debugging this
+      // failure case somewhat easier to debug:
+      expect(application.id).not.toBe("403dafb4-9c37-4dfc-bfb4-02fb0cf681fb");
 
       const cookie = await getLoginCookie();
       const formData = new FormData();
@@ -827,6 +827,8 @@ describe.sequential("OAuth", () => {
     let client: Awaited<ReturnType<typeof createOAuthApplication>>;
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read:accounts"],
@@ -834,10 +836,6 @@ describe.sequential("OAuth", () => {
         confidential: true,
       });
       application = await getApplication(client);
-    });
-
-    afterEach(async () => {
-      await cleanDatabase();
     });
 
     it("can exchange an access grant for an access token using PKCE", async () => {
@@ -980,6 +978,8 @@ describe.sequential("OAuth", () => {
     let wrongClient: Awaited<ReturnType<typeof createOAuthApplication>>;
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read:accounts"],
@@ -994,11 +994,6 @@ describe.sequential("OAuth", () => {
         confidential: true,
       });
       wrongApplication = await getApplication(wrongClient);
-    });
-
-    afterEach(async () => {
-      vi.useRealTimers();
-      await cleanDatabase();
     });
 
     it("cannot request an access token without using a client authentication method", async () => {
@@ -1217,10 +1212,10 @@ describe.sequential("OAuth", () => {
     describe.sequential("expired access grants", () => {
       beforeEach(() => {
         timekeeper.freeze();
-      });
 
-      afterEach(() => {
-        timekeeper.reset();
+        return () => {
+          timekeeper.reset();
+        };
       });
 
       it("cannot exchange an access grant for an access token when the access grant has expired", async () => {
@@ -1404,6 +1399,8 @@ describe.sequential("OAuth", () => {
     let account: Awaited<ReturnType<typeof createAccount>>;
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read:accounts"],
@@ -1411,10 +1408,6 @@ describe.sequential("OAuth", () => {
         confidential: false,
       });
       application = await getApplication(client);
-    });
-
-    afterEach(async () => {
-      await cleanDatabase();
     });
 
     it("can request an access token using the authorization code grant flow", async () => {

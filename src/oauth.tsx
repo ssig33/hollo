@@ -147,7 +147,7 @@ app.post(
     }
 
     const accountOwner = await db.query.accountOwners.findFirst({
-      where: eq(applications.id, form.account_id),
+      where: eq(accountOwners.id, form.account_id),
     });
     if (accountOwner == null) {
       return c.notFound();
