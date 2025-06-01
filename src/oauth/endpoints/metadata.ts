@@ -11,6 +11,7 @@ app.get("/", (c) => {
     authorization_endpoint: new URL("/oauth/authorize", url).href,
     token_endpoint: new URL("/oauth/token", url).href,
     revocation_endpoint: new URL("/oauth/revoke", url).href,
+    userinfo_endpoint: new URL("/oauth/userinfo", url).href,
     scopes_supported: Schema.scopeEnum.enumValues,
     response_types_supported: ["code"],
     response_modes_supported: ["query"],

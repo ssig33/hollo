@@ -10,7 +10,8 @@ describe("GET /.well-known/oauth-authorization-server", () => {
   app.route("/.well-known/oauth-authorization-server", metadataEndpoint);
 
   it("returns OAuth authorization server metadata", async () => {
-    expect.assertions(14);
+    expect.assertions(15);
+
     // We use the full URL in this test as the route calculates values based
     // on the Host header
     const response = await app.request(
@@ -30,6 +31,7 @@ describe("GET /.well-known/oauth-authorization-server", () => {
     );
     expect(json.token_endpoint).toBe("https://hollo.test/oauth/token");
     expect(json.revocation_endpoint).toBe("https://hollo.test/oauth/revoke");
+    expect(json.userinfo_endpoint).toBe("https://hollo.test/oauth/userinfo");
     // Non-standard, mastodon extension:
     expect(json.app_registration_endpoint).toBe(
       "https://hollo.test/api/v1/apps",
