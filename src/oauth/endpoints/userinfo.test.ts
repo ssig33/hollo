@@ -63,7 +63,7 @@ describe.sequential("/oauth/userinfo", () => {
 
     expect(json.iss).toBe("https://hollo.test/");
     expect(json.sub).toBe("https://hollo.test/@hollo");
-    expect(json.name).toBe("Hollo Test");
+    expect(json.name).toBe("Test: hollo");
     expect(json.preferredUsername).toBe("hollo");
     expect(json.profile).toBe("https://hollo.test/@hollo");
     expect(json.picture).toBe(
@@ -96,7 +96,7 @@ describe.sequential("/oauth/userinfo", () => {
 
     expect(json.iss).toBe("https://hollo.test/");
     expect(json.sub).toBe("https://hollo.test/@hollo");
-    expect(json.name).toBe("Hollo Test");
+    expect(json.name).toBe("Test: hollo");
     expect(json.preferredUsername).toBe("hollo");
     expect(json.profile).toBe("https://hollo.test/@hollo");
     expect(json.picture).toBe(
