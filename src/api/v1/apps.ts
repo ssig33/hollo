@@ -100,6 +100,8 @@ app.post("/", async (c) => {
     redirect_uri: app.redirectUris.join(" "),
     client_id: app.clientId,
     client_secret: app.clientSecret,
+    // This is a placeholder for Application Client Secrets potentially expiring:
+    client_secret_expires_at: 0,
     // vapid_key is deprecated, it should be fetched from /api/v1/instance instead
     vapid_key: "",
   };
