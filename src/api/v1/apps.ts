@@ -1,9 +1,8 @@
-import { base64 } from "@hexagon/base64";
 import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../db";
-import { requestBody } from "../../helpers";
+import { randomBytes, requestBody } from "../../helpers";
 import { type Variables, tokenRequired } from "../../oauth/middleware";
 import {
   type NewApplication,
@@ -66,14 +65,8 @@ app.post("/", async (c) => {
 
   const form = result.data;
 
-  const clientId = base64.fromArrayBuffer(
-    crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer,
-    true,
-  );
-  const clientSecret = base64.fromArrayBuffer(
-    crypto.getRandomValues(new Uint8Array(32)).buffer as ArrayBuffer,
-    true,
-  );
+  const clientId = randomBytes(16);
+  const clientSecret = randomBytes(32);
 
   const uniqueScopes = [
     ...new Set(form.scopes ?? (["read"] satisfies Scope[])),

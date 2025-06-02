@@ -58,6 +58,11 @@ To be released.
     powered By [Shiki].  See also the [complete list of supported languages].
     [[#149]]
 
+ -  Implemented OAuth 2.0 Proof Key for Code Exchange (PKCE) support with the
+    `S256` code challenge method.  This enhances security by preventing
+    authorization code interception attacks in the OAuth authorization flow.
+    [[#155] by Emelia Smith]
+
  -  Upgraded Fedify to 1.5.3 and *@fedify/postgres* to 0.3.0.
 
  -  The minimum required version of Node.js is now 24.0.0.
@@ -79,6 +84,7 @@ To be released.
 [#137]: https://github.com/fedify-dev/hollo/pull/137
 [#149]: https://github.com/fedify-dev/hollo/issues/149
 [#152]: https://github.com/fedify-dev/hollo/pull/152
+[#155]: https://github.com/fedify-dev/hollo/pull/155
 
 
 Version 0.5.6
