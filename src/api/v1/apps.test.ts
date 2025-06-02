@@ -157,6 +157,48 @@ describe.sequential("POST /api/v1/apps", () => {
     expect(application.confidential).toBe(true);
   });
 
+  it("successfully creates an application with multiple redirect_uris", async () => {
+    expect.assertions(10);
+    const body = JSON.stringify({
+      client_name: "Test: Multiple redirect URIs",
+      redirect_uris: [
+        "https://app.test/onboarding/connect",
+        "https://app.test/oauth/callback",
+      ],
+    });
+
+    const response = await app.request("/api/v1/apps", {
+      method: "POST",
+      body,
+      headers: {
+        "content-type": "application/json",
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+
+    const credentialApplication = await response.json();
+    const application = await getLastApplication();
+
+    expect(typeof credentialApplication).toBe("object");
+    expect(credentialApplication.id).toBe(application.id);
+    expect(credentialApplication.redirect_uris).toEqual(
+      application.redirectUris,
+    );
+    expect(credentialApplication.redirect_uri).toBe(
+      application.redirectUris.join(" "),
+    );
+
+    expect(application.redirectUris).toEqual([
+      "https://app.test/onboarding/connect",
+      "https://app.test/oauth/callback",
+    ]);
+    expect(application.scopes).toEqual(["read"]);
+    expect(application.confidential).toBe(true);
+  });
+
   // TODO: Support public clients
   it.skip("successfully creates a public client application");
 
