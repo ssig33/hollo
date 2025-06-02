@@ -68,7 +68,7 @@ const allowedImageMimeTypes = ["image/gif", "image/jpeg", "image/png"];
 app.get(
   "/verify_credentials",
   tokenRequired,
-  scopeRequired(["read:accounts"]),
+  scopeRequired(["read:accounts", "profile"]),
   async (c) => {
     const accountOwner = c.get("token").accountOwner;
     if (accountOwner == null) {

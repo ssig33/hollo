@@ -1,10 +1,9 @@
 import { parseHTML } from "linkedom";
 import * as timekeeper from "timekeeper";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import app from "./index";
 import type * as Schema from "./schema";
-import { scopeEnum } from "./schema";
 
 import { cleanDatabase } from "../tests/helpers";
 import {
@@ -12,8 +11,6 @@ import {
   createAccount,
   createOAuthApplication,
   findAccessGrant,
-  findAccessToken,
-  getAccessToken,
   getApplication,
   getLastAccessGrant,
   getLastAccessToken,
@@ -35,64 +32,14 @@ async function getPage(response: Response) {
 }
 
 describe.sequential("OAuth", () => {
-  afterEach(async () => {
-    await cleanDatabase();
-  });
-
-  it("Can GET /.well-known/oauth-authorization-server", async () => {
-    expect.assertions(14);
-    // We use the full URL in this test as the route calculates values based
-    // on the Host header
-    const response = await app.request(
-      "http://localhost:3000/.well-known/oauth-authorization-server",
-      {
-        method: "GET",
-      },
-    );
-
-    expect(response.status).toBe(200);
-
-    const metadata = await response.json();
-
-    expect(metadata.issuer).toBe("http://localhost:3000/");
-    expect(metadata.authorization_endpoint).toBe(
-      "http://localhost:3000/oauth/authorize",
-    );
-    expect(metadata.token_endpoint).toBe("http://localhost:3000/oauth/token");
-    expect(metadata.revocation_endpoint).toBe(
-      "http://localhost:3000/oauth/revoke",
-    );
-    // Non-standard, mastodon extension:
-    expect(metadata.app_registration_endpoint).toBe(
-      "http://localhost:3000/api/v1/apps",
-    );
-
-    expect(metadata.response_types_supported).toEqual(["code"]);
-    expect(metadata.response_modes_supported).toEqual(["query"]);
-    expect(metadata.grant_types_supported).toEqual([
-      "authorization_code",
-      "client_credentials",
-    ]);
-    expect(metadata.token_endpoint_auth_methods_supported).toEqual([
-      "client_secret_post",
-      "client_secret_basic",
-    ]);
-
-    expect(Array.isArray(metadata.scopes_supported)).toBeTruthy();
-    expect(metadata.scopes_supported).toEqual(scopeEnum.enumValues);
-
-    expect(
-      Array.isArray(metadata.code_challenge_methods_supported),
-    ).toBeTruthy();
-    expect(metadata.code_challenge_methods_supported).toEqual(["S256"]);
-  });
-
   describe.sequential("GET /oauth/authorize", () => {
     let application: Schema.Application;
     let client: Awaited<ReturnType<typeof createOAuthApplication>>;
     let account: Awaited<ReturnType<typeof createAccount>>;
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read", "read:accounts", "follow"],
@@ -598,6 +545,8 @@ describe.sequential("OAuth", () => {
     const APP_REDIRECT_URI = "custom://oauth_callback";
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read:accounts"],
@@ -763,7 +712,11 @@ describe.sequential("OAuth", () => {
     });
 
     it("returns an error if the application does not exist", async () => {
-      expect.assertions(1);
+      expect.assertions(2);
+
+      // This is an incredibly small chance, but just to make debugging this
+      // failure case somewhat easier to debug:
+      expect(application.id).not.toBe("403dafb4-9c37-4dfc-bfb4-02fb0cf681fb");
 
       const cookie = await getLoginCookie();
       const formData = new FormData();
@@ -874,6 +827,8 @@ describe.sequential("OAuth", () => {
     let client: Awaited<ReturnType<typeof createOAuthApplication>>;
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read:accounts"],
@@ -881,10 +836,6 @@ describe.sequential("OAuth", () => {
         confidential: true,
       });
       application = await getApplication(client);
-    });
-
-    afterEach(async () => {
-      await cleanDatabase();
     });
 
     it("can exchange an access grant for an access token using PKCE", async () => {
@@ -1027,6 +978,8 @@ describe.sequential("OAuth", () => {
     let wrongClient: Awaited<ReturnType<typeof createOAuthApplication>>;
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read:accounts"],
@@ -1041,11 +994,6 @@ describe.sequential("OAuth", () => {
         confidential: true,
       });
       wrongApplication = await getApplication(wrongClient);
-    });
-
-    afterEach(async () => {
-      vi.useRealTimers();
-      await cleanDatabase();
     });
 
     it("cannot request an access token without using a client authentication method", async () => {
@@ -1264,10 +1212,10 @@ describe.sequential("OAuth", () => {
     describe.sequential("expired access grants", () => {
       beforeEach(() => {
         timekeeper.freeze();
-      });
 
-      afterEach(() => {
-        timekeeper.reset();
+        return () => {
+          timekeeper.reset();
+        };
       });
 
       it("cannot exchange an access grant for an access token when the access grant has expired", async () => {
@@ -1451,6 +1399,8 @@ describe.sequential("OAuth", () => {
     let account: Awaited<ReturnType<typeof createAccount>>;
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read:accounts"],
@@ -1458,10 +1408,6 @@ describe.sequential("OAuth", () => {
         confidential: false,
       });
       application = await getApplication(client);
-    });
-
-    afterEach(async () => {
-      await cleanDatabase();
     });
 
     it("can request an access token using the authorization code grant flow", async () => {
@@ -1523,156 +1469,6 @@ describe.sequential("OAuth", () => {
       expect(response.headers.get("content-type")).toBe("application/json");
 
       expect(responseBody.error).toBe("unauthorized_client");
-    });
-  });
-
-  describe.sequential("POST /oauth/revoke", () => {
-    let account: Awaited<ReturnType<typeof createAccount>>;
-    let client: Awaited<ReturnType<typeof createOAuthApplication>>;
-    let application: Schema.Application;
-    let wrongClient: Awaited<ReturnType<typeof createOAuthApplication>>;
-    let wrongApplication: Schema.Application;
-
-    beforeEach(async () => {
-      account = await createAccount();
-      client = await createOAuthApplication({
-        scopes: ["read:accounts"],
-        redirectUris: [OOB_REDIRECT_URI],
-        confidential: true,
-      });
-      application = await getApplication(client);
-
-      wrongClient = await createOAuthApplication({
-        scopes: ["read:accounts"],
-        redirectUris: [OOB_REDIRECT_URI],
-        confidential: true,
-      });
-      wrongApplication = await getApplication(wrongClient);
-    });
-
-    afterEach(async () => {
-      await cleanDatabase();
-    });
-
-    it("can revoke an access token using client_secret_basic", async () => {
-      expect.assertions(4);
-      const accessToken = await getAccessToken(client, account);
-      const body = new FormData();
-      body.set("token", accessToken.token);
-
-      const response = await app.request("/oauth/revoke", {
-        method: "POST",
-        headers: {
-          authorization: basicAuthorization(application),
-        },
-        body,
-      });
-
-      expect(response.status).toBe(200);
-      expect(response.headers.get("content-type")).toBe("application/json");
-      expect(response.headers.get("access-control-allow-origin")).toBe("*");
-
-      const accessTokenAfterRevocation = await findAccessToken(
-        accessToken.token,
-      );
-
-      expect(accessTokenAfterRevocation).toBe(undefined);
-    });
-
-    it("can revoke an access token using client_secret_post", async () => {
-      expect.assertions(4);
-      const accessToken = await getAccessToken(client, account);
-      const body = new FormData();
-      body.set("token", accessToken.token);
-      body.set("client_id", application.clientId);
-      body.set("client_secret", application.clientSecret);
-
-      const response = await app.request("/oauth/revoke", {
-        method: "POST",
-        body,
-      });
-
-      expect(response.status).toBe(200);
-      expect(response.headers.get("content-type")).toBe("application/json");
-      expect(response.headers.get("access-control-allow-origin")).toBe("*");
-
-      const accessTokenAfterRevocation = await findAccessToken(
-        accessToken.token,
-      );
-
-      expect(accessTokenAfterRevocation).toBe(undefined);
-    });
-
-    it("cannot revoke an access token for a different client, but does not return any errors", async () => {
-      expect.assertions(4);
-      const accessToken = await getAccessToken(client, account);
-      const body = new FormData();
-      body.set("token", accessToken.token);
-      body.set("client_id", wrongApplication.clientId);
-      body.set("client_secret", wrongApplication.clientSecret);
-
-      const response = await app.request("/oauth/revoke", {
-        method: "POST",
-        body,
-      });
-
-      expect(response.status).toBe(200);
-      expect(response.headers.get("content-type")).toBe("application/json");
-      expect(response.headers.get("access-control-allow-origin")).toBe("*");
-
-      const accessTokenAfterRevocation = await findAccessToken(
-        accessToken.token,
-      );
-
-      expect(accessTokenAfterRevocation).not.toBe(undefined);
-    });
-
-    it("cannot revoke a token using token_type_hint of refresh_token", async () => {
-      expect.assertions(5);
-      const body = new FormData();
-      body.set("token", "123");
-      body.set("token_type_hint", "refresh_token");
-
-      const response = await app.request("/oauth/revoke", {
-        method: "POST",
-        headers: {
-          authorization: basicAuthorization(application),
-        },
-        body,
-      });
-
-      expect(response.status).toBe(400);
-      expect(response.headers.get("content-type")).toBe("application/json");
-      expect(response.headers.get("access-control-allow-origin")).toBe("*");
-
-      const responseBody = await response.json();
-
-      expect(typeof responseBody).toBe("object");
-      expect(responseBody.error).toBe("unsupported_token_type");
-    });
-
-    it("cannot revoke a token without supplying the token parameter", async () => {
-      expect.assertions(5);
-      const body = new FormData();
-      // explicitly doesn't have `token`
-      body.set("token_type_hint", "refresh_token");
-
-      const response = await app.request("/oauth/revoke", {
-        method: "POST",
-        headers: {
-          authorization: basicAuthorization(application),
-        },
-        body,
-      });
-
-      expect(response.status).toBe(400);
-      expect(response.headers.get("content-type")).toBe("application/json");
-      expect(response.headers.get("access-control-allow-origin")).toBe("*");
-
-      const responseBody = await response.json();
-
-      expect(typeof responseBody).toBe("object");
-      expect(responseBody.error).toBe("invalid_request");
     });
   });
 });

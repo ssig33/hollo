@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import type * as Schema from "../schema";
 
@@ -32,15 +32,13 @@ describe.sequential("OAuth / Middleware", () => {
     let account: Awaited<ReturnType<typeof createAccount>>;
 
     beforeEach(async () => {
+      await cleanDatabase();
+
       account = await createAccount();
       client = await createOAuthApplication({
         scopes: ["read:accounts"],
       });
       application = await getApplication(client);
-    });
-
-    afterEach(async () => {
-      await cleanDatabase();
     });
 
     it("Can use a client credentials token", async () => {
@@ -204,7 +202,7 @@ describe.sequential("OAuth / Middleware", () => {
       });
     });
 
-    afterEach(async () => {
+    beforeEach(async () => {
       await cleanDatabase();
     });
 

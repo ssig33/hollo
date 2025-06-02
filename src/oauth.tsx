@@ -1,9 +1,9 @@
 import { zValidator } from "@hono/zod-validator";
 import { getLogger } from "@logtape/logtape";
-import { and, eq } from "drizzle-orm";
-import { type Context, Hono } from "hono";
-import { cors } from "hono/cors";
+import { eq } from "drizzle-orm";
+import { Hono } from "hono";
 import { z } from "zod";
+
 import { db } from "./db.ts";
 import { requestBody } from "./helpers.ts";
 import { loginRequired } from "./login.ts";
@@ -19,13 +19,11 @@ import {
   clientAuthentication,
 } from "./oauth/middleware.ts";
 import { scopesSchema } from "./oauth/validators.ts";
-import {
-  accessGrants,
-  accessTokens,
-  applications,
-  scopeEnum,
-} from "./schema.ts";
+import { accessGrants, accountOwners, applications } from "./schema.ts";
 import { uuid } from "./uuid.ts";
+
+import revokeEndpoint from "./oauth/endpoints/revoke.ts";
+import userInfoEndpoint from "./oauth/endpoints/userinfo.ts";
 
 import { AuthorizationPage } from "./pages/oauth/authorization.tsx";
 import { AuthorizationCodePage } from "./pages/oauth/authorization_code.tsx";
@@ -59,6 +57,9 @@ const validatePKCEParameters = (
     };
   }
 };
+
+app.route("/userinfo", userInfoEndpoint);
+app.route("/revoke", revokeEndpoint);
 
 app.get(
   "/authorize",
@@ -146,7 +147,7 @@ app.post(
     }
 
     const accountOwner = await db.query.accountOwners.findFirst({
-      where: eq(applications.id, form.account_id),
+      where: eq(accountOwners.id, form.account_id),
     });
     if (accountOwner == null) {
       return c.notFound();
@@ -232,7 +233,7 @@ const tokenRequestSchema = z.discriminatedUnion("grant_type", [
   }),
 ]);
 
-app.post("/token", cors(), clientAuthentication, async (c) => {
+app.post("/token", clientAuthentication, async (c) => {
   const client = c.get("client");
   const result = await requestBody(c.req, tokenRequestSchema);
 
@@ -397,75 +398,5 @@ app.post("/token", cors(), clientAuthentication, async (c) => {
     });
   }
 });
-
-// RFC7009 - OAuth Token Revocation:
-const tokenRevocationSchema = z.strictObject({
-  token: z.string(),
-  token_type_hint: z.string().optional(),
-  // client_id and client_secret are present but consumed by the
-  // clientAuthentication middleware:
-  client_id: z.string().optional(),
-  client_secret: z.string().optional(),
-});
-
-app.post("/revoke", cors(), clientAuthentication, async (c) => {
-  const client = c.get("client");
-  const result = await requestBody(c.req, tokenRevocationSchema);
-
-  if (!result.success) {
-    return c.json({ error: "invalid_request", zod_error: result.error }, 400);
-  }
-
-  if (
-    result.data.token_type_hint &&
-    result.data.token_type_hint !== "access_token"
-  ) {
-    return c.json(
-      {
-        error: "unsupported_token_type",
-        error_description:
-          "The authorization server does not support the revocation of the presented token type",
-      },
-      400,
-    );
-  }
-
-  await db
-    .delete(accessTokens)
-    .where(
-      and(
-        eq(accessTokens.code, result.data.token),
-        eq(accessTokens.applicationId, client.id),
-      ),
-    );
-
-  // The spec is a little strange here in that the response status is 200, but
-  // there's actually no response body, so 204 would be more appropriate.
-  // We return an empty json response to make testing easier:
-  return c.json({}, 200);
-});
-
-export async function oauthAuthorizationServer(c: Context) {
-  const url = new URL(c.req.url);
-
-  return c.json({
-    issuer: new URL("/", url).href,
-    authorization_endpoint: new URL("/oauth/authorize", url).href,
-    token_endpoint: new URL("/oauth/token", url).href,
-    revocation_endpoint: new URL("/oauth/revoke", url).href,
-    scopes_supported: scopeEnum.enumValues,
-    response_types_supported: ["code"],
-    response_modes_supported: ["query"],
-    grant_types_supported: ["authorization_code", "client_credentials"],
-    token_endpoint_auth_methods_supported: [
-      "client_secret_post",
-      "client_secret_basic",
-      // Not supported until we support public clients:
-      // "none",
-    ],
-    code_challenge_methods_supported: ["S256"],
-    app_registration_endpoint: new URL("/api/v1/apps", url).href,
-  });
-}
 
 export default app;
