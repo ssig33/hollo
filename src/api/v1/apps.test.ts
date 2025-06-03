@@ -23,7 +23,7 @@ describe.sequential("POST /api/v1/apps", () => {
   });
 
   it("successfully creates a confidential client using FormData (by default)", async () => {
-    expect.assertions(12);
+    expect.assertions(13);
 
     const body = new FormData();
     body.append("scopes", "read:accounts");
@@ -37,20 +37,18 @@ describe.sequential("POST /api/v1/apps", () => {
     expect(response.headers.get("content-type")).toBe("application/json");
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
-    const credentialApplication = await response.json();
+    const json = await response.json();
     const application = await getLastApplication();
 
     expect(application.clientId).to.match(URL_SAFE_REGEXP);
     expect(application.clientSecret).to.match(URL_SAFE_REGEXP);
 
-    expect(typeof credentialApplication).toBe("object");
-    expect(credentialApplication.id).toBe(application.id);
-    expect(credentialApplication.redirect_uris).toEqual(
-      application.redirectUris,
-    );
-    expect(credentialApplication.redirect_uri).toBe(
-      application.redirectUris.join(" "),
-    );
+    expect(typeof json).toBe("object");
+    expect(json.id).toBe(application.id);
+    expect(json.redirect_uris).toEqual(application.redirectUris);
+    expect(json.redirect_uri).toBe(application.redirectUris.join(" "));
+    // This is a placeholder for Application Client Secrets potentially expiring:
+    expect(json.client_secret_expires_at).toBe(0);
 
     expect(application.redirectUris).toEqual([]);
     expect(application.scopes).toEqual(["read:accounts"]);
@@ -82,7 +80,7 @@ describe.sequential("POST /api/v1/apps", () => {
   });
 
   it("successfully creates a confidential client using JSON (by default)", async () => {
-    expect.assertions(11);
+    expect.assertions(12);
     const body = JSON.stringify({ scopes: "read:accounts" });
 
     const response = await app.request("/api/v1/apps", {
@@ -97,11 +95,11 @@ describe.sequential("POST /api/v1/apps", () => {
     expect(response.headers.get("content-type")).toBe("application/json");
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
 
-    const credentialApplication = await response.json();
+    const json = await response.json();
     const application = await getLastApplication();
 
-    expect(typeof credentialApplication).toBe("object");
-    expect(Object.keys(credentialApplication)).toEqual([
+    expect(typeof json).toBe("object");
+    expect(Object.keys(json)).toEqual([
       "id",
       "name",
       "website",
@@ -110,16 +108,16 @@ describe.sequential("POST /api/v1/apps", () => {
       "client_id",
       // Note: for public clients, this won't be present:
       "client_secret",
+      "client_secret_expires_at",
       "vapid_key",
     ]);
 
-    expect(credentialApplication.id).toBe(application.id);
-    expect(credentialApplication.redirect_uris).toEqual(
-      application.redirectUris,
-    );
-    expect(credentialApplication.redirect_uri).toBe(
-      application.redirectUris.join(" "),
-    );
+    expect(json.id).toBe(application.id);
+    expect(json.redirect_uris).toEqual(application.redirectUris);
+    expect(json.redirect_uri).toBe(application.redirectUris.join(" "));
+
+    // This is a placeholder for Application Client Secrets potentially expiring:
+    expect(json.client_secret_expires_at).toBe(0);
 
     expect(application.redirectUris).toEqual([]);
     expect(application.scopes).toEqual(["read:accounts"]);
