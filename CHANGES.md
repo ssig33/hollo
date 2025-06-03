@@ -63,6 +63,12 @@ To be released.
     authorization code interception attacks in the OAuth authorization flow.
     [[#155] by Emelia Smith]
 
+ -  Added support for the `profile` OAuth scope for enhanced user authentication.
+    This allows applications to request limited profile information using the
+    new `/oauth/userinfo` endpoint and enables the `profile` scope to be used
+    with the `GET /api/v1/accounts/verify_credentials` endpoint.
+    [[#45], [#156] by Emelia Smith]
+
  -  Upgraded Fedify to 1.5.3 and *@fedify/postgres* to 0.3.0.
 
  -  The minimum required version of Node.js is now 24.0.0.
@@ -70,6 +76,7 @@ To be released.
 [*Colors* section]: https://picocss.com/docs/colors
 [Shiki]: https://shiki.style/
 [complete list of supported languages]: https://shiki.style/languages
+[#45]: https://github.com/fedify-dev/hollo/issues/45
 [#50]: https://github.com/fedify-dev/hollo/issues/50
 [#110]: https://github.com/fedify-dev/hollo/pull/110
 [#111]: https://github.com/fedify-dev/hollo/issues/111
@@ -85,6 +92,7 @@ To be released.
 [#149]: https://github.com/fedify-dev/hollo/issues/149
 [#152]: https://github.com/fedify-dev/hollo/pull/152
 [#155]: https://github.com/fedify-dev/hollo/pull/155
+[#156]: https://github.com/fedify-dev/hollo/pull/156
 
 
 Version 0.5.6
