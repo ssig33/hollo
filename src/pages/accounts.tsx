@@ -205,7 +205,7 @@ function AccountListPage({ accountOwners }: AccountListPageProps) {
       <hgroup>
         <h1>Accounts</h1>
         <p>
-          You can have more than one account. Each account have its own handle,
+          You can have more than one account. Each account has its own handle,
           settings, and data, and you can switch between them at any time.
         </p>
       </hgroup>
