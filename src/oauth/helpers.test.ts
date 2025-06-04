@@ -88,7 +88,7 @@ describe("OAuth Helpers", () => {
     let retrievedAccessToken: schema.AccessToken | null | undefined;
     const app = new Hono();
     app.get("/", async (c) => {
-      retrievedAccessToken = await getAccessToken(db, c);
+      retrievedAccessToken = await getAccessToken(c);
       return c.json(null);
     });
 

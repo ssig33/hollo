@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { eq, lt } from "drizzle-orm";
 import type { Context, Env, HonoRequest } from "hono";
-import db, { type Database, type Transaction } from "../db";
+import db, { type Transaction } from "../db";
 import { base64Url, randomBytes } from "../helpers";
 import * as schema from "../schema";
 import type { Uuid } from "../uuid";
@@ -176,14 +176,12 @@ export async function createClientCredential(
 
 /**
  * Retrieves an access token from the request's `Authorization` header.
- * @param db The database instance to query for the access token.
  * @param c The Hono request context or request object containing
  *          the `Authorization` header.
  * @returns The access token if found, or `undefined` if the header is missing
  *          or malformed, or `null` if the token does not exist in the database.
  */
 export async function getAccessToken<T extends Env>(
-  db: Database,
   c: Context<T> | HonoRequest,
 ): Promise<
   | (schema.AccessToken & {

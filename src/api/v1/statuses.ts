@@ -378,7 +378,7 @@ app.put(
 );
 
 app.get("/:id", async (c) => {
-  const token = await getAccessToken(db, c);
+  const token = await getAccessToken(c);
   const owner = token?.scopes.includes("read:statuses")
     ? token?.accountOwner
     : null;
@@ -469,7 +469,7 @@ app.get(
 );
 
 app.get("/:id/context", async (c) => {
-  const token = await getAccessToken(db, c);
+  const token = await getAccessToken(c);
   const owner = token?.scopes.includes("read:statuses")
     ? token?.accountOwner
     : null;

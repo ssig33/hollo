@@ -149,7 +149,7 @@ export const clientAuthentication = createMiddleware<{
 
 export const tokenRequired = createMiddleware<{ Variables: Variables }>(
   async (c, next) => {
-    const accessToken = await getAccessToken(db, c);
+    const accessToken = await getAccessToken(c);
     if (typeof accessToken === "undefined") {
       return c.json({ error: "unauthorized" }, 401);
     }
