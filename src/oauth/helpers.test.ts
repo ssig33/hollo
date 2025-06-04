@@ -5,16 +5,13 @@ import { cleanDatabase } from "../../tests/helpers";
 import {
   createAccount,
   createOAuthApplication,
-  getApplication,
 } from "../../tests/helpers/oauth";
+import * as oauthHelpers from "../../tests/helpers/oauth";
 import db from "../db";
 import { URL_SAFE_REGEXP } from "../helpers";
 import * as schema from "../schema";
-import { OOB_REDIRECT_URI } from "./constants";
 import {
   calculatePKCECodeChallenge,
-  createAccessGrant,
-  createAccessToken,
   generatePKCECodeVerifier,
   getAccessToken,
 } from "./helpers";
@@ -59,29 +56,17 @@ describe("OAuth Helpers", () => {
     beforeEach(async () => {
       await cleanDatabase();
 
-      accessToken = await db.transaction(async (tx) => {
-        const account = await createAccount();
-        const client = await createOAuthApplication({
-          scopes: ["read:accounts"],
-        });
-        const application = await getApplication(client);
-        const { code } = await createAccessGrant(
-          application.id,
-          account.id,
-          [],
-          OOB_REDIRECT_URI,
-        );
-        const accessGrant = await tx.query.accessGrants.findFirst({
-          where: eq(schema.accessGrants.code, code),
-        });
-        const { token } = (await createAccessToken(accessGrant!, tx))!;
-        return await tx.query.accessTokens.findFirst({
-          where: eq(schema.accessTokens.code, token),
-          with: {
-            accountOwner: { with: { account: { with: { successor: true } } } },
-            application: true,
-          },
-        });
+      const account = await createAccount();
+      const client = await createOAuthApplication({
+        scopes: ["read:accounts"],
+      });
+      const { token } = await oauthHelpers.getAccessToken(client, account);
+      accessToken = await db.query.accessTokens.findFirst({
+        where: eq(schema.accessTokens.code, token),
+        with: {
+          accountOwner: { with: { account: { with: { successor: true } } } },
+          application: true,
+        },
       });
     });
 
