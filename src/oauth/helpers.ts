@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
-
-import { lt } from "drizzle-orm";
-import db, { type Transaction } from "../db";
+import { eq, lt } from "drizzle-orm";
+import type { Context, Env, HonoRequest } from "hono";
+import db, { type Database, type Transaction } from "../db";
 import { base64Url, randomBytes } from "../helpers";
 import * as schema from "../schema";
 import type { Uuid } from "../uuid";
@@ -172,4 +172,44 @@ export async function createClientCredential(
     scope: result[0].scopes.join(" "),
     created: (+result[0].created / 1000) | 0,
   };
+}
+
+/**
+ * Retrieves an access token from the request's `Authorization` header.
+ * @param db The database instance to query for the access token.
+ * @param c The Hono request context or request object containing
+ *          the `Authorization` header.
+ * @returns The access token if found, or `undefined` if the header is missing
+ *          or malformed, or `null` if the token does not exist in the database.
+ */
+export async function getAccessToken<T extends Env>(
+  db: Database,
+  c: Context<T> | HonoRequest,
+): Promise<
+  | (schema.AccessToken & {
+      application: schema.Application;
+      accountOwner:
+        | (schema.AccountOwner & {
+            account: schema.Account & { successor: schema.Account | null };
+          })
+        | null;
+    })
+  | undefined
+  | null
+> {
+  const req = "req" in c ? c.req : c;
+  const authorization = req.header("Authorization");
+  if (authorization == null) return undefined;
+  const match = /^(?:bearer)\s+(.+)$/i.exec(authorization);
+  if (match == null) return undefined;
+  const token = match[1];
+  const accessToken = await db.query.accessTokens.findFirst({
+    where: eq(schema.accessTokens.code, token),
+    with: {
+      accountOwner: { with: { account: { with: { successor: true } } } },
+      application: true,
+    },
+  });
+  if (accessToken == null) return null;
+  return accessToken;
 }

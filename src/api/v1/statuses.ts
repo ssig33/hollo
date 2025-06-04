@@ -14,6 +14,7 @@ import {
   and,
   eq,
   gt,
+  inArray,
   isNotNull,
   isNull,
   notInArray,
@@ -40,6 +41,7 @@ import {
   toUpdate,
 } from "../../federation/post";
 import { appendPostToTimelines } from "../../federation/timeline";
+import { getAccessToken } from "../../oauth/helpers";
 import {
   type Variables,
   scopeRequired,
@@ -375,16 +377,21 @@ app.put(
   },
 );
 
-app.get("/:id", tokenRequired, scopeRequired(["read:statuses"]), async (c) => {
-  const owner = c.get("token").accountOwner;
-  if (owner == null) {
-    return c.json({ error: "This method requires an authenticated user" }, 422);
-  }
+app.get("/:id", async (c) => {
+  const token = await getAccessToken(db, c);
+  const owner = token?.scopes.includes("read:statuses")
+    ? token?.accountOwner
+    : null;
   const id = c.req.param("id");
   if (!isUuid(id)) return c.json({ error: "Record not found" }, 404);
   const post = await db.query.posts.findFirst({
-    where: eq(posts.id, id),
-    with: getPostRelations(owner.id),
+    where: and(
+      eq(posts.id, id),
+      owner == null
+        ? inArray(posts.visibility, ["public", "unlisted"])
+        : undefined,
+    ),
+    with: getPostRelations(owner?.id),
   });
   if (post == null) return c.json({ error: "Record not found" }, 404);
   return c.json(serializePost(post, owner, c.req.url));
@@ -461,121 +468,136 @@ app.get(
   },
 );
 
-app.get(
-  "/:id/context",
-  tokenRequired,
-  scopeRequired(["read:statuses"]),
-  async (c) => {
-    const owner = c.get("token").accountOwner;
-    if (owner == null) {
-      return c.json(
-        { error: "This method requires an authenticated user" },
-        422,
-      );
-    }
-    const id = c.req.param("id");
-    if (!isUuid(id)) return c.json({ error: "Record not found" }, 404);
-    const post = await db.query.posts.findFirst({
-      where: eq(posts.id, id),
-      with: getPostRelations(owner.id),
-    });
-    if (post == null) return c.json({ error: "Record not found" }, 404);
-    const ancestors: (typeof post)[] = [];
-    let p: typeof post | undefined = post;
-    while (p.replyTargetId != null) {
-      p = await db.query.posts.findFirst({
-        where: and(
-          eq(posts.id, p.replyTargetId),
-          notInArray(
-            posts.accountId,
-            db
-              .select({ accountId: mutes.mutedAccountId })
-              .from(mutes)
-              .where(
-                and(
-                  eq(mutes.accountId, owner.id),
-                  or(
-                    isNull(mutes.duration),
-                    gt(
-                      sql`${mutes.created} + ${mutes.duration}`,
-                      sql`CURRENT_TIMESTAMP`,
+app.get("/:id/context", async (c) => {
+  const token = await getAccessToken(db, c);
+  const owner = token?.scopes.includes("read:statuses")
+    ? token?.accountOwner
+    : null;
+  const id = c.req.param("id");
+  if (!isUuid(id)) return c.json({ error: "Record not found" }, 404);
+  const post = await db.query.posts.findFirst({
+    where: and(
+      eq(posts.id, id),
+      owner == null
+        ? inArray(posts.visibility, ["public", "unlisted"])
+        : undefined,
+    ),
+    with: getPostRelations(owner?.id),
+  });
+  if (post == null) return c.json({ error: "Record not found" }, 404);
+  const ancestors: (typeof post)[] = [];
+  let p: typeof post | undefined = post;
+  while (p.replyTargetId != null) {
+    p = await db.query.posts.findFirst({
+      where: and(
+        eq(posts.id, p.replyTargetId),
+        owner == null
+          ? inArray(posts.visibility, ["public", "unlisted"])
+          : undefined,
+        owner == null
+          ? undefined
+          : notInArray(
+              posts.accountId,
+              db
+                .select({ accountId: mutes.mutedAccountId })
+                .from(mutes)
+                .where(
+                  and(
+                    eq(mutes.accountId, owner.id),
+                    or(
+                      isNull(mutes.duration),
+                      gt(
+                        sql`${mutes.created} + ${mutes.duration}`,
+                        sql`CURRENT_TIMESTAMP`,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ),
-          notInArray(
-            posts.accountId,
-            db
-              .select({ accountId: blocks.blockedAccountId })
-              .from(blocks)
-              .where(eq(blocks.accountId, owner.id)),
-          ),
-          notInArray(
-            posts.accountId,
-            db
-              .select({ accountId: blocks.accountId })
-              .from(blocks)
-              .where(eq(blocks.blockedAccountId, owner.id)),
-          ),
-        ),
-        with: getPostRelations(owner.id),
-      });
-      if (p == null) break;
-      ancestors.unshift(p);
-    }
-    const descendants: (typeof post)[] = [];
-    const ps: (typeof post)[] = [post];
-    while (true) {
-      const p = ps.shift();
-      if (p == null) break;
-      const replies = await db.query.posts.findMany({
-        where: and(
-          eq(posts.replyTargetId, p.id),
-          notInArray(
-            posts.accountId,
-            db
-              .select({ accountId: mutes.mutedAccountId })
-              .from(mutes)
-              .where(
-                and(
-                  eq(mutes.accountId, owner.id),
-                  or(
-                    isNull(mutes.duration),
-                    gt(
-                      sql`${mutes.created} + ${mutes.duration}`,
-                      sql`CURRENT_TIMESTAMP`,
+            ),
+        owner == null
+          ? undefined
+          : notInArray(
+              posts.accountId,
+              db
+                .select({ accountId: blocks.blockedAccountId })
+                .from(blocks)
+                .where(eq(blocks.accountId, owner.id)),
+            ),
+        owner == null
+          ? undefined
+          : notInArray(
+              posts.accountId,
+              db
+                .select({ accountId: blocks.accountId })
+                .from(blocks)
+                .where(eq(blocks.blockedAccountId, owner.id)),
+            ),
+      ),
+      with: getPostRelations(owner?.id),
+    });
+    if (p == null) break;
+    ancestors.unshift(p);
+  }
+  const descendants: (typeof post)[] = [];
+  const ps: (typeof post)[] = [post];
+  while (true) {
+    const p = ps.shift();
+    if (p == null) break;
+    const replies = await db.query.posts.findMany({
+      where: and(
+        eq(posts.replyTargetId, p.id),
+        owner == null
+          ? inArray(posts.visibility, ["public", "unlisted"])
+          : undefined,
+        owner == null
+          ? undefined
+          : notInArray(
+              posts.accountId,
+              db
+                .select({ accountId: mutes.mutedAccountId })
+                .from(mutes)
+                .where(
+                  and(
+                    eq(mutes.accountId, owner.id),
+                    or(
+                      isNull(mutes.duration),
+                      gt(
+                        sql`${mutes.created} + ${mutes.duration}`,
+                        sql`CURRENT_TIMESTAMP`,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ),
-          notInArray(
-            posts.accountId,
-            db
-              .select({ accountId: blocks.blockedAccountId })
-              .from(blocks)
-              .where(eq(blocks.accountId, owner.id)),
-          ),
-          notInArray(
-            posts.accountId,
-            db
-              .select({ accountId: blocks.accountId })
-              .from(blocks)
-              .where(eq(blocks.blockedAccountId, owner.id)),
-          ),
-        ),
-        with: getPostRelations(owner.id),
-      });
-      descendants.push(...replies);
-      ps.push(...replies);
-    }
-    return c.json({
-      ancestors: ancestors.map((p) => serializePost(p, owner, c.req.url)),
-      descendants: descendants.map((p) => serializePost(p, owner, c.req.url)),
+            ),
+        owner == null
+          ? undefined
+          : notInArray(
+              posts.accountId,
+              db
+                .select({ accountId: blocks.blockedAccountId })
+                .from(blocks)
+                .where(eq(blocks.accountId, owner.id)),
+            ),
+        owner == null
+          ? undefined
+          : notInArray(
+              posts.accountId,
+              db
+                .select({ accountId: blocks.accountId })
+                .from(blocks)
+                .where(eq(blocks.blockedAccountId, owner.id)),
+            ),
+      ),
+      with: getPostRelations(owner?.id),
     });
-  },
-);
+    descendants.push(...replies);
+    ps.push(...replies);
+  }
+  return c.json({
+    ancestors: ancestors.map((p) => serializePost(p, owner, c.req.url)),
+    descendants: descendants.map((p) => serializePost(p, owner, c.req.url)),
+  });
+});
 
 app.post(
   "/:id/favourite",

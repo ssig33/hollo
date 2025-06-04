@@ -1,10 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
+import { Hono } from "hono";
+import { beforeEach, describe, expect, it } from "vitest";
+import { cleanDatabase } from "../../tests/helpers";
+import {
+  createAccount,
+  createOAuthApplication,
+  getApplication,
+} from "../../tests/helpers/oauth";
+import db from "../db";
+import { URL_SAFE_REGEXP } from "../helpers";
+import * as schema from "../schema";
+import { OOB_REDIRECT_URI } from "./constants";
 import {
   calculatePKCECodeChallenge,
+  createAccessGrant,
+  createAccessToken,
   generatePKCECodeVerifier,
+  getAccessToken,
 } from "./helpers";
-
-import { URL_SAFE_REGEXP } from "../helpers";
 
 describe("OAuth Helpers", () => {
   describe("generatePKCECodeVerifier", () => {
@@ -28,6 +41,88 @@ describe("OAuth Helpers", () => {
       const code = await calculatePKCECodeChallenge("testtest");
 
       expect(code).toBe("NyaDNd1pMQRb3N-SYj_4GaZCRLU9DnRtQ4eXNJ1NpXg");
+    });
+  });
+
+  describe("getAccessToken", async () => {
+    let accessToken:
+      | (schema.AccessToken & {
+          application: schema.Application;
+          accountOwner:
+            | (schema.AccountOwner & {
+                account: schema.Account & { successor: schema.Account | null };
+              })
+            | null;
+        })
+      | undefined;
+
+    beforeEach(async () => {
+      await cleanDatabase();
+
+      accessToken = await db.transaction(async (tx) => {
+        const account = await createAccount();
+        const client = await createOAuthApplication({
+          scopes: ["read:accounts"],
+        });
+        const application = await getApplication(client);
+        const { code } = await createAccessGrant(
+          application.id,
+          account.id,
+          [],
+          OOB_REDIRECT_URI,
+        );
+        const accessGrant = await tx.query.accessGrants.findFirst({
+          where: eq(schema.accessGrants.code, code),
+        });
+        const { token } = (await createAccessToken(accessGrant!, tx))!;
+        return await tx.query.accessTokens.findFirst({
+          where: eq(schema.accessTokens.code, token),
+          with: {
+            accountOwner: { with: { account: { with: { successor: true } } } },
+            application: true,
+          },
+        });
+      });
+    });
+
+    let retrievedAccessToken: schema.AccessToken | null | undefined;
+    const app = new Hono();
+    app.get("/", async (c) => {
+      retrievedAccessToken = await getAccessToken(db, c);
+      return c.json(null);
+    });
+
+    it("should return an AccessToken object if token is provided", async () => {
+      expect.assertions(3);
+
+      expect(accessToken).toBeDefined();
+      const response = await app.request("/", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken?.code}`,
+        },
+      });
+      expect(response.status).toBe(200);
+      expect(retrievedAccessToken).toEqual(accessToken);
+    });
+
+    it("should return undefined if no Authorization header is provided", async () => {
+      expect.assertions(2);
+
+      const response = await app.request("/", { method: "GET" });
+      expect(response.status).toBe(200);
+      expect(retrievedAccessToken).toBeUndefined();
+    });
+
+    it("should return null if Authorization header contains an invalid token", async () => {
+      expect.assertions(2);
+
+      const response = await app.request("/", {
+        method: "GET",
+        headers: { Authorization: "Bearer INVALID" },
+      });
+      expect(response.status).toBe(200);
+      expect(retrievedAccessToken).toBeNull();
     });
   });
 });

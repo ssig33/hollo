@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { PreviewCard } from "../previewcard";
 import {
   type Account,
@@ -26,7 +26,7 @@ import { serializeEmojis, serializeReactions } from "./emoji";
 import { serializeMedium } from "./medium";
 import { serializePoll } from "./poll";
 
-export function getPostRelations(ownerId: Uuid) {
+export function getPostRelations(ownerId: Uuid | undefined | null) {
   return {
     account: { with: { owner: true, successor: true } },
     application: true,
@@ -45,16 +45,32 @@ export function getPostRelations(ownerId: Uuid) {
             poll: {
               with: {
                 options: { orderBy: pollOptions.index },
-                votes: { where: eq(pollVotes.accountId, ownerId) },
+                votes: {
+                  where:
+                    ownerId == null
+                      ? sql`false`
+                      : eq(pollVotes.accountId, ownerId),
+                },
               },
             },
             mentions: {
               with: { account: { with: { owner: true, successor: true } } },
             },
-            likes: { where: eq(likes.accountId, ownerId) },
+            likes: {
+              where:
+                ownerId == null ? sql`false` : eq(likes.accountId, ownerId),
+            },
             reactions: { with: { account: { with: { successor: true } } } },
-            shares: { where: eq(posts.accountId, ownerId) },
-            bookmarks: { where: eq(bookmarks.accountOwnerId, ownerId) },
+            shares: {
+              where:
+                ownerId == null ? sql`false` : eq(posts.accountId, ownerId),
+            },
+            bookmarks: {
+              where:
+                ownerId == null
+                  ? sql`false`
+                  : eq(bookmarks.accountOwnerId, ownerId),
+            },
             pin: true,
           },
         },
@@ -62,16 +78,28 @@ export function getPostRelations(ownerId: Uuid) {
         poll: {
           with: {
             options: { orderBy: pollOptions.index },
-            votes: { where: eq(pollVotes.accountId, ownerId) },
+            votes: {
+              where:
+                ownerId == null ? sql`false` : eq(pollVotes.accountId, ownerId),
+            },
           },
         },
         mentions: {
           with: { account: { with: { owner: true, successor: true } } },
         },
-        likes: { where: eq(likes.accountId, ownerId) },
+        likes: {
+          where: ownerId == null ? sql`false` : eq(likes.accountId, ownerId),
+        },
         reactions: { with: { account: { with: { successor: true } } } },
-        shares: { where: eq(posts.accountId, ownerId) },
-        bookmarks: { where: eq(bookmarks.accountOwnerId, ownerId) },
+        shares: {
+          where: ownerId == null ? sql`false` : eq(posts.accountId, ownerId),
+        },
+        bookmarks: {
+          where:
+            ownerId == null
+              ? sql`false`
+              : eq(bookmarks.accountOwnerId, ownerId),
+        },
         pin: true,
       },
     },
@@ -84,16 +112,28 @@ export function getPostRelations(ownerId: Uuid) {
         poll: {
           with: {
             options: { orderBy: pollOptions.index },
-            votes: { where: eq(pollVotes.accountId, ownerId) },
+            votes: {
+              where:
+                ownerId == null ? sql`false` : eq(pollVotes.accountId, ownerId),
+            },
           },
         },
         mentions: {
           with: { account: { with: { owner: true, successor: true } } },
         },
-        likes: { where: eq(likes.accountId, ownerId) },
+        likes: {
+          where: ownerId == null ? sql`false` : eq(likes.accountId, ownerId),
+        },
         reactions: { with: { account: { with: { successor: true } } } },
-        shares: { where: eq(posts.accountId, ownerId) },
-        bookmarks: { where: eq(bookmarks.accountOwnerId, ownerId) },
+        shares: {
+          where: ownerId == null ? sql`false` : eq(posts.accountId, ownerId),
+        },
+        bookmarks: {
+          where:
+            ownerId == null
+              ? sql`false`
+              : eq(bookmarks.accountOwnerId, ownerId),
+        },
         pin: true,
       },
     },
@@ -101,14 +141,24 @@ export function getPostRelations(ownerId: Uuid) {
     poll: {
       with: {
         options: { orderBy: pollOptions.index },
-        votes: { where: eq(pollVotes.accountId, ownerId) },
+        votes: {
+          where:
+            ownerId == null ? sql`false` : eq(pollVotes.accountId, ownerId),
+        },
       },
     },
     mentions: { with: { account: { with: { owner: true, successor: true } } } },
-    likes: { where: eq(likes.accountId, ownerId) },
+    likes: {
+      where: ownerId == null ? sql`false` : eq(likes.accountId, ownerId),
+    },
     reactions: { with: { account: { with: { successor: true } } } },
-    shares: { where: eq(posts.accountId, ownerId) },
-    bookmarks: { where: eq(bookmarks.accountOwnerId, ownerId) },
+    shares: {
+      where: ownerId == null ? sql`false` : eq(posts.accountId, ownerId),
+    },
+    bookmarks: {
+      where:
+        ownerId == null ? sql`false` : eq(bookmarks.accountOwnerId, ownerId),
+    },
     pin: true,
     replies: true,
   } as const;
@@ -203,7 +253,7 @@ export function serializePost(
     bookmarks: Bookmark[];
     pin: PinnedPost | null;
   },
-  currentAccountOwner: { id: string },
+  currentAccountOwner: { id: string } | undefined | null,
   baseUrl: URL | string,
   // biome-ignore lint/suspicious/noExplicitAny: JSON
 ): Record<string, any> {
@@ -221,17 +271,27 @@ export function serializePost(
     replies_count: post.repliesCount ?? 0,
     reblogs_count: post.sharesCount ?? 0,
     favourites_count: post.likesCount ?? 0,
-    favourited: post.likes.some(
-      (like) => like.accountId === currentAccountOwner.id,
-    ),
-    reblogged: post.shares.some(
-      (share) => share.accountId === currentAccountOwner.id,
-    ),
+    favourited:
+      currentAccountOwner == null
+        ? false
+        : post.likes.some((like) => like.accountId === currentAccountOwner.id),
+    reblogged:
+      currentAccountOwner == null
+        ? false
+        : post.shares.some(
+            (share) => share.accountId === currentAccountOwner.id,
+          ),
     muted: false, // TODO
-    bookmarked: post.bookmarks.some(
-      (bookmark) => bookmark.accountOwnerId === currentAccountOwner.id,
-    ),
-    pinned: post.pin != null && post.pin.accountId === currentAccountOwner.id,
+    bookmarked:
+      currentAccountOwner == null
+        ? false
+        : post.bookmarks.some(
+            (bookmark) => bookmark.accountOwnerId === currentAccountOwner.id,
+          ),
+    pinned:
+      currentAccountOwner == null
+        ? false
+        : post.pin != null && post.pin.accountId === currentAccountOwner.id,
     content: post.contentHtml ?? "",
     reblog:
       post.sharing == null
