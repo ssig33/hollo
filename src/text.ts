@@ -42,6 +42,7 @@ const shiki = await Shiki({
     light: "one-light",
     dark: "one-dark-pro",
   },
+  defaultColor: "light-dark()",
 });
 
 export async function formatText(
