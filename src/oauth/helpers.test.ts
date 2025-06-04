@@ -70,11 +70,10 @@ describe("OAuth Helpers", () => {
       });
     });
 
-    let retrievedAccessToken: schema.AccessToken | null | undefined;
     const app = new Hono();
     app.get("/", async (c) => {
-      retrievedAccessToken = await getAccessToken(c);
-      return c.json(null);
+      const token = await getAccessToken(c);
+      return c.json({ token });
     });
 
     it("should return an AccessToken object if token is provided", async () => {
@@ -88,7 +87,11 @@ describe("OAuth Helpers", () => {
         },
       });
       expect(response.status).toBe(200);
-      expect(retrievedAccessToken).toEqual(accessToken);
+      expect(await response.json()).toEqual({
+        // To convert the Date objects inside the tree to ISO 8601 strings,
+        // round-trip the object through JSON:
+        token: JSON.parse(JSON.stringify(accessToken)),
+      });
     });
 
     it("should return undefined if no Authorization header is provided", async () => {
@@ -96,7 +99,7 @@ describe("OAuth Helpers", () => {
 
       const response = await app.request("/", { method: "GET" });
       expect(response.status).toBe(200);
-      expect(retrievedAccessToken).toBeUndefined();
+      expect(await response.json()).toEqual({});
     });
 
     it("should return null if Authorization header contains an invalid token", async () => {
@@ -107,7 +110,7 @@ describe("OAuth Helpers", () => {
         headers: { Authorization: "Bearer INVALID" },
       });
       expect(response.status).toBe(200);
-      expect(retrievedAccessToken).toBeNull();
+      expect(await response.json()).toEqual({ token: null });
     });
   });
 });
