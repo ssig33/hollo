@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.6.1
 -------------
 
-To be released.
+Released on June 5, 2025.
 
  -  Fixed `POST /oauth/token` endpoint rejecting requests with additional
     parameters not required by RFC 6749 but commonly sent by clients.
