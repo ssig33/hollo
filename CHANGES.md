@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.6.0
 -------------
 
-To be released.
+Released on June 5, 2025.
 
  -  Revamped the environment variables for asset storage configuration.
     [[#115], [#121] by Emelia Smith]
