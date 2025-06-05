@@ -1368,11 +1368,47 @@ describe.sequential("OAuth", () => {
       expect(responseBody.error).toBe("unsupported_grant_type");
     });
 
-    // Invalid request
-    it("cannot use unknown parameters", async () => {
-      expect.assertions(4);
+    it("can accept scope for authorization_code requests", async () => {
+      expect.assertions(7);
+
+      const accessGrant = await createAccessGrant(
+        application.id,
+        account.id,
+        ["read:accounts"],
+        OOB_REDIRECT_URI,
+      );
+
+      const body = new FormData();
+      body.set("grant_type", "authorization_code");
+      body.set("redirect_uri", OOB_REDIRECT_URI);
+      body.set("code", accessGrant.code);
+      body.set("scope", "follow");
+
+      const response = await app.request("/oauth/token", {
+        method: "POST",
+        headers: {
+          authorization: basicAuthorization(application),
+        },
+        body,
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toBe("application/json");
+
+      const responseBody = await response.json();
+      expect(typeof responseBody).toBe("object");
+      expect(responseBody).toHaveProperty("access_token");
+      expect(responseBody).toHaveProperty("created_at");
+      expect(responseBody.scope).toBe("read:accounts");
+      expect(responseBody.token_type).toBe("Bearer");
+    });
+
+    it("can accept redirect_uri for client_credentials requests", async () => {
+      expect.assertions(7);
+
       const body = new FormData();
       body.set("grant_type", "client_credentials");
+      body.set("scope", "read:accounts");
       body.set("redirect_uri", OOB_REDIRECT_URI);
 
       const response = await app.request("/oauth/token", {
@@ -1383,13 +1419,17 @@ describe.sequential("OAuth", () => {
         body,
       });
 
-      expect(response.status).toBe(400);
-      expect(response.headers.get("content-type")).toBe("application/json");
+      // No redirection happens here, since redirect_uri is not used in
+      // client_credentials flow, so we expect a 200 OK response:
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toBe("application/json");
 
       const responseBody = await response.json();
-
       expect(typeof responseBody).toBe("object");
-      expect(responseBody.error).toBe("invalid_request");
+      expect(responseBody).toHaveProperty("access_token");
+      expect(responseBody).toHaveProperty("created_at");
+      expect(responseBody.scope).toBe("read:accounts");
+      expect(responseBody.token_type).toBe("Bearer");
     });
   });
 

@@ -213,7 +213,11 @@ const INVALID_GRANT_ERROR = {
 };
 
 const tokenRequestSchema = z.discriminatedUnion("grant_type", [
-  z.strictObject({
+  // Use z.object() instead of z.strictObject() to allow clients to send
+  // additional parameters like 'redirect_uri' which are commonly sent but not
+  // required by RFC 6749 for client_credentials grant type.
+  // See also <https://github.com/fedify-dev/hollo/issues/163>:
+  z.object({
     grant_type: z.literal("client_credentials"),
     scope: scopesSchema.optional(),
     // client_id and client_secret are present but consumed by the
@@ -221,7 +225,11 @@ const tokenRequestSchema = z.discriminatedUnion("grant_type", [
     client_id: z.string().optional(),
     client_secret: z.string().optional(),
   }),
-  z.strictObject({
+  // Use z.object() instead of z.strictObject() to allow clients to send
+  // additional parameters like 'scope' which are commonly sent but not
+  // required by RFC 6749 for authorization_code grant type.
+  // See also <https://github.com/fedify-dev/hollo/issues/163>:
+  z.object({
     grant_type: z.literal("authorization_code"),
     redirect_uri: z.string().url(),
     code: z.string(),
