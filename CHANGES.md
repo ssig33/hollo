@@ -6,6 +6,16 @@ Version 0.6.1
 
 To be released.
 
+ -  Fixed `POST /oauth/token` endpoint rejecting requests with additional
+    parameters not required by RFC 6749 but commonly sent by clients.
+    The endpoint now gracefully ignores extra parameters like `scope` in
+    `authorization_code` requests and `redirect_uri` in `client_credentials`
+    requests instead of returning validation errors.
+    [[#163], [#164] by Hong Minhee]
+
+[#163]: https://github.com/fedify-dev/hollo/issues/163
+[#164]: https://github.com/fedify-dev/hollo/pull/164
+
 
 Version 0.6.0
 -------------
