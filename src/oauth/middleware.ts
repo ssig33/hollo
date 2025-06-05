@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import { auth } from "hono/utils/basic-auth";
+import { z } from "zod";
 import { db } from "../db.ts";
 import { requestBody } from "../helpers.ts";
 import {
@@ -9,11 +10,9 @@ import {
   type AccountOwner,
   type Application,
   type Scope,
+  accessTokens,
   applications,
 } from "../schema.ts";
-
-import { z } from "zod";
-import { getAccessToken } from "./helpers.ts";
 
 export type Variables = {
   token: AccessToken & {
@@ -149,11 +148,23 @@ export const clientAuthentication = createMiddleware<{
 
 export const tokenRequired = createMiddleware<{ Variables: Variables }>(
   async (c, next) => {
-    const accessToken = await getAccessToken(c);
-    if (typeof accessToken === "undefined") {
-      return c.json({ error: "unauthorized" }, 401);
+    const authorization = c.req.header("Authorization");
+    if (authorization == null) return c.json({ error: "unauthorized" }, 401);
+    const match = /^(?:bearer)\s+(.+)$/i.exec(authorization);
+    if (match == null) return c.json({ error: "unauthorized" }, 401);
+    const token = match[1];
+
+    const accessToken = await db.query.accessTokens.findFirst({
+      where: eq(accessTokens.code, token),
+      with: {
+        accountOwner: { with: { account: { with: { successor: true } } } },
+        application: true,
+      },
+    });
+
+    if (accessToken === undefined) {
+      return c.json({ error: "invalid_token" }, 401);
     }
-    if (accessToken === null) return c.json({ error: "invalid_token" }, 401);
 
     c.set("token", accessToken);
     await next();
