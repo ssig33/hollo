@@ -69,6 +69,12 @@ To be released.
     with the `GET /api/v1/accounts/verify_credentials` endpoint.
     [[#45], [#156] by Emelia Smith]
 
+ -  Made few Mastodon API endpoints publicly accessible without
+    authentication so that they behave more similarly to Mastodon:
+
+     -  `GET /api/v1/statuses/:id`
+     -  `GET /api/v1/statuses/:id/context`
+
  -  Upgraded Fedify to 1.5.3 and *@fedify/postgres* to 0.3.0.
 
  -  The minimum required version of Node.js is now 24.0.0.

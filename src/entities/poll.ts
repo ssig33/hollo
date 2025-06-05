@@ -5,7 +5,7 @@ export function serializePoll(
     options: PollOption[];
     votes: PollVote[];
   },
-  currentAccountOwner: { id: string },
+  currentAccountOwner: { id: string } | undefined | null,
   // biome-ignore lint/suspicious/noExplicitAny: JSON
 ): Record<string, any> {
   return {
@@ -18,10 +18,15 @@ export function serializePoll(
       0,
     ),
     voters_count: poll.multiple ? poll.votersCount : null,
-    voted: poll.votes.some((v) => v.accountId === currentAccountOwner.id),
-    own_votes: poll.votes
-      .filter((v) => v.accountId === currentAccountOwner.id)
-      .map((v) => v.optionIndex),
+    voted:
+      currentAccountOwner != null &&
+      poll.votes.some((v) => v.accountId === currentAccountOwner.id),
+    own_votes:
+      currentAccountOwner == null
+        ? []
+        : poll.votes
+            .filter((v) => v.accountId === currentAccountOwner.id)
+            .map((v) => v.optionIndex),
     options: poll.options
       .toSorted((a, b) => (a.index < b.index ? -1 : 1))
       .map(serializePollOption),
