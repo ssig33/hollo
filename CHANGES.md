@@ -4,7 +4,16 @@ Hollo changelog
 Version 0.6.2
 -------------
 
-To be released.
+Released on June 8, 2025.
+
+ -  Fixed an issue where Hollo 0.6.x installations upgraded from Hollo 0.5.x
+    or earlier failed to sign in with Elk, a popular Mastodon client.
+    This was caused by old application registrations incorrectly defaulting
+    to non-confidential.  All existing applications are now properly set as
+    confidential clients.  [[#167], [#168] by Emelia Smith]
+
+[#167]: https://github.com/fedify-dev/hollo/issues/167
+[#168]: https://github.com/fedify-dev/hollo/pull/168
 
 
 Version 0.6.1
