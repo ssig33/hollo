@@ -484,6 +484,13 @@
       "when": 1748827411086,
       "tag": "0068_add_profile_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1749309918513,
+      "tag": "0069_repair-application-confidentiality",
+      "breakpoints": true
     }
   ]
 }
