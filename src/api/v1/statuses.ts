@@ -99,6 +99,15 @@ const statusSchema = z.object({
   language: z.string().min(2).optional(),
 });
 
+const createStatusSchema = statusSchema.merge(
+  z.object({
+    in_reply_to_id: uuid.optional(),
+    quote_id: uuid.optional(),
+    visibility: z.enum(["public", "unlisted", "private", "direct"]).optional(),
+    scheduled_at: z.string().datetime().optional(),
+  }),
+);
+
 app.post("/", tokenRequired, scopeRequired(["write:statuses"]), async (c) => {
   const token = c.get("token");
   const owner = token.accountOwner;
@@ -127,19 +136,7 @@ app.post("/", tokenRequired, scopeRequired(["write:statuses"]), async (c) => {
     }),
   };
 
-  const result = await requestBody(
-    c.req,
-    statusSchema.merge(
-      z.object({
-        in_reply_to_id: uuid.optional(),
-        quote_id: uuid.optional(),
-        visibility: z
-          .enum(["public", "unlisted", "private", "direct"])
-          .optional(),
-        scheduled_at: z.string().datetime().optional(),
-      }),
-    ),
-  );
+  const result = await requestBody(c.req, createStatusSchema);
 
   if (!result.success) {
     logger.debug("Invalid request: {error}", { error: result.error.errors });
@@ -301,19 +298,7 @@ app.put("/:id", tokenRequired, scopeRequired(["write:statuses"]), async (c) => {
     return c.json({ error: "Record not found" }, 404);
   }
 
-  const result = await requestBody(
-    c.req,
-    statusSchema.merge(
-      z.object({
-        in_reply_to_id: uuid.optional(),
-        quote_id: uuid.optional(),
-        visibility: z
-          .enum(["public", "unlisted", "private", "direct"])
-          .optional(),
-        scheduled_at: z.string().datetime().optional(),
-      }),
-    ),
-  );
+  const result = await requestBody(c.req, statusSchema);
 
   if (!result.success) {
     logger.debug("Invalid request: {error}", { error: result.error.errors });
