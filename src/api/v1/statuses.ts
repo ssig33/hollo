@@ -9,7 +9,6 @@ import {
   Undo,
 } from "@fedify/fedify";
 import * as vocab from "@fedify/fedify/vocab";
-import { zValidator } from "@hono/zod-validator";
 import { getLogger } from "@logtape/logtape";
 import {
   and,
