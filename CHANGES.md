@@ -6,6 +6,15 @@ Version 0.7.0
 
 To be released.
 
+ -  Fixed `POST /api/v1/statuses` and `PUT /api/v1/statuses/:id` endpoints
+    rejecting FormData requests.  These endpoints now properly accept both
+    JSON and FormData content types, improving compatibility with Mastodon
+    clients that send `multipart/form-data` requests.
+    [[#170], [#171] by Emelia Smith]
+
+[#170]: https://github.com/fedify-dev/hollo/issues/170
+[#171]: https://github.com/fedify-dev/hollo/pull/171
+
 
 Version 0.6.2
 -------------
