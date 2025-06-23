@@ -7,6 +7,9 @@ import federation from "../federation";
 import { persistAccount } from "../federation/account";
 import { isPost, persistPost } from "../federation/post";
 import { loginRequired } from "../login";
+import { getLogger } from "@logtape/logtape";
+
+const logger = getLogger(["hollo", "pages", "federation"]);
 
 const data = new Hono();
 
@@ -155,7 +158,9 @@ data.post("/refresh", async (c) => {
         await persistPost(db, object, c.req.url, { ...fedCtx, documentLoader });
         return c.redirect("/federation?done=refresh:post");
       }
-    } catch {}
+    } catch (error) {
+      logger.error("Failed to refresh: {error}", { error });
+    }
   }
   return c.redirect("/federation?error=refresh");
 });

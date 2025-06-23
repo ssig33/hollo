@@ -6,6 +6,9 @@ Version 0.6.3
 
 To be released.
 
+ -  Fixed a bug where remote posts mentioning the same user multiple times
+    could not be retrieved due to database constraint violations.
+
 
 Version 0.6.2
 -------------
