@@ -1,4 +1,5 @@
 import { isActor } from "@fedify/fedify";
+import { getLogger } from "@logtape/logtape";
 import { count, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { DashboardLayout } from "../components/DashboardLayout";
@@ -7,7 +8,6 @@ import federation from "../federation";
 import { persistAccount } from "../federation/account";
 import { isPost, persistPost } from "../federation/post";
 import { loginRequired } from "../login";
-import { getLogger } from "@logtape/logtape";
 
 const logger = getLogger(["hollo", "pages", "federation"]);
 
