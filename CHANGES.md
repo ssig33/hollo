@@ -16,6 +16,15 @@ To be released.
 [#171]: https://github.com/fedify-dev/hollo/pull/171
 
 
+Version 0.6.3
+-------------
+
+Released on June 23, 2025.
+
+ -  Fixed a bug where remote posts mentioning the same user multiple times
+    could not be retrieved due to database constraint violations.
+
+
 Version 0.6.2
 -------------
 

@@ -381,6 +381,9 @@ export async function persistPost(
           accountId: account.id,
           postId: post.id,
         })
+        .onConflictDoNothing({
+          target: [mentions.accountId, mentions.postId],
+        })
         .returning();
       mentionRows.push(...result);
     }
