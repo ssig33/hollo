@@ -12,8 +12,14 @@ To be released.
     clients that send `multipart/form-data` requests.
     [[#170], [#171] by Emelia Smith]
 
+ -  Fixed a bug where multiple JSON objects were written on a single line
+    in log files when `LOG_FILE` environment variable was set.  Upgraded
+    LogTape to 1.0 and now uses `jsonLinesFormatter` to ensure proper
+    JSON Lines format with one JSON object per line.  [[#174]]
+
 [#170]: https://github.com/fedify-dev/hollo/issues/170
 [#171]: https://github.com/fedify-dev/hollo/pull/171
+[#174]: https://github.com/fedify-dev/hollo/pull/174
 
 
 Version 0.6.3
