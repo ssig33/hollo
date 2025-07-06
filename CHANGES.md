@@ -6,6 +6,17 @@ Version 0.6.4
 
 To be released.
 
+ -  Fixed a regression bug where follower-only posts were returning `404 Not
+    Found` errors when accessed through conversation threads. This was caused
+    by improper OAuth scope checking that only accepted `read:statuses` scope
+    but tokens contain `read` scope:  [[#169], [#172]]
+
+     -  `GET /api/v1/statuses/:id`
+     -  `GET /api/v1/statuses/:id/context`
+
+[#169]: https://github.com/fedify-dev/hollo/issues/169
+[#172]: https://github.com/fedify-dev/hollo/pull/172
+
 
 Version 0.6.3
 -------------
