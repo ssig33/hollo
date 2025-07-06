@@ -5,6 +5,7 @@ Hollo is a federated single-user microblogging software powered by [Fedify](http
 ## Project Overview
 
 - **Technology Stack**: TypeScript, Hono.js (Web framework), Drizzle ORM, PostgreSQL
+- **Package Manager**: pnpm only (npm is not used)
 - **License**: GNU Affero General Public License v3 (AGPL-3.0)
 - **Structure**: Single-user microblogging platform with federation capabilities
 - **API**: Implements Mastodon-compatible APIs for client integration
@@ -53,6 +54,7 @@ Hollo is a federated single-user microblogging software powered by [Fedify](http
 2. **Unit Tests**: Write unit tests for business logic
 3. **Integration Tests**: Test API endpoints and federation functionality
 4. **Mocking**: Use proper mocking for external dependencies
+5. **Test Runner**: Use Vitest for testing (run with `pnpm test`)
 
 ### Security Considerations
 
@@ -68,6 +70,12 @@ Hollo is a federated single-user microblogging software powered by [Fedify](http
 2. **Indexing**: Use appropriate database indexes
 3. **Caching**: Implement caching where appropriate
 4. **Pagination**: Implement proper pagination for list endpoints
+
+## Development Commands
+
+- **Type Check & Lint**: `pnpm check` - Runs TypeScript type checking and linting
+- **Testing**: `pnpm test` - Runs automated tests using Vitest
+- **Formatting**: `pnpm biome format --fix` - Formats code using Biome
 
 ## Important Notes
 
