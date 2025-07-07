@@ -6,6 +6,7 @@ import {
   configure,
   getAnsiColorFormatter,
   getStreamSink,
+  jsonLinesFormatter,
   parseLogLevel,
 } from "@logtape/logtape";
 
@@ -28,7 +29,7 @@ await configure({
       LOG_FILE == null
         ? () => undefined
         : getFileSink(LOG_FILE, {
-            formatter: JSON.stringify.bind(JSON),
+            formatter: jsonLinesFormatter,
           }),
   },
   filters: {},
