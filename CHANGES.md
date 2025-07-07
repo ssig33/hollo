@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.6.4
 -------------
 
-To be released.
+Released on July 7, 2025.
 
  -  Fixed a regression bug where follower-only posts were returning `404 Not
     Found` errors when accessed through conversation threads. This was caused
