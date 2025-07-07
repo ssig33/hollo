@@ -13,6 +13,7 @@ import { getLogger } from "@logtape/logtape";
 import {
   and,
   eq,
+  exists,
   gt,
   inArray,
   isNotNull,
@@ -61,6 +62,7 @@ import {
   blocks,
   bookmarks,
   customEmojis,
+  follows,
   likes,
   media,
   mentions,
@@ -76,6 +78,86 @@ import { type Uuid, isUuid, uuid, uuidv7 } from "../../uuid";
 
 const app = new Hono<{ Variables: Variables }>();
 const logger = getLogger(["hollo", "api", "v1", "statuses"]);
+
+/**
+ * Builds visibility conditions for post queries based on viewer's permissions.
+ * For unauthenticated users, only public/unlisted posts are visible.
+ * For authenticated users, includes private posts from accounts they follow.
+ */
+function buildVisibilityConditions(viewerAccountId: Uuid | null | undefined) {
+  if (viewerAccountId == null) {
+    // Unauthenticated: only public and unlisted posts
+    return inArray(posts.visibility, ["public", "unlisted"]);
+  }
+
+  // Authenticated: include private posts based on follower relationships
+  return or(
+    inArray(posts.visibility, ["public", "unlisted", "direct"]),
+    and(
+      eq(posts.visibility, "private"),
+      or(
+        // User's own posts
+        eq(posts.accountId, viewerAccountId),
+        // Posts from accounts the user follows (approved follows only)
+        exists(
+          db
+            .select({ id: follows.followingId })
+            .from(follows)
+            .where(
+              and(
+                eq(follows.followingId, posts.accountId),
+                eq(follows.followerId, viewerAccountId),
+                isNotNull(follows.approved),
+              ),
+            ),
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Builds mute and block conditions for authenticated users.
+ * Returns undefined for unauthenticated users (no mute/block filtering).
+ */
+function buildMuteAndBlockConditions(viewerAccountId: Uuid | null | undefined) {
+  if (viewerAccountId == null) return undefined;
+
+  return and(
+    notInArray(
+      posts.accountId,
+      db
+        .select({ accountId: mutes.mutedAccountId })
+        .from(mutes)
+        .where(
+          and(
+            eq(mutes.accountId, viewerAccountId),
+            or(
+              isNull(mutes.duration),
+              gt(
+                sql`${mutes.created} + ${mutes.duration}`,
+                sql`CURRENT_TIMESTAMP`,
+              ),
+            ),
+          ),
+        ),
+    ),
+    notInArray(
+      posts.accountId,
+      db
+        .select({ accountId: blocks.blockedAccountId })
+        .from(blocks)
+        .where(eq(blocks.accountId, viewerAccountId)),
+    ),
+    notInArray(
+      posts.accountId,
+      db
+        .select({ accountId: blocks.accountId })
+        .from(blocks)
+        .where(eq(blocks.blockedAccountId, viewerAccountId)),
+    ),
+  );
+}
 
 const statusSchema = z.object({
   status: z.string().min(1).optional(),
@@ -380,20 +462,19 @@ app.put("/:id", tokenRequired, scopeRequired(["write:statuses"]), async (c) => {
 
 app.get("/:id", async (c) => {
   const token = await getAccessToken(c);
-  const owner = token?.scopes.includes("read:statuses")
-    ? token?.accountOwner
-    : null;
+  const owner =
+    token?.scopes.includes("read:statuses") || token?.scopes.includes("read")
+      ? token?.accountOwner
+      : null;
   const id = c.req.param("id");
+
   if (!isUuid(id)) return c.json({ error: "Record not found" }, 404);
+
   const post = await db.query.posts.findFirst({
-    where: and(
-      eq(posts.id, id),
-      owner == null
-        ? inArray(posts.visibility, ["public", "unlisted"])
-        : undefined,
-    ),
+    where: and(eq(posts.id, id), buildVisibilityConditions(owner?.id)),
     with: getPostRelations(owner?.id),
   });
+
   if (post == null) return c.json({ error: "Record not found" }, 404);
   return c.json(serializePost(post, owner, c.req.url));
 });
@@ -471,18 +552,15 @@ app.get(
 
 app.get("/:id/context", async (c) => {
   const token = await getAccessToken(c);
-  const owner = token?.scopes.includes("read:statuses")
-    ? token?.accountOwner
-    : null;
+  const owner =
+    token?.scopes.includes("read:statuses") || token?.scopes.includes("read")
+      ? token?.accountOwner
+      : null;
   const id = c.req.param("id");
   if (!isUuid(id)) return c.json({ error: "Record not found" }, 404);
+
   const post = await db.query.posts.findFirst({
-    where: and(
-      eq(posts.id, id),
-      owner == null
-        ? inArray(posts.visibility, ["public", "unlisted"])
-        : undefined,
-    ),
+    where: and(eq(posts.id, id), buildVisibilityConditions(owner?.id)),
     with: getPostRelations(owner?.id),
   });
   if (post == null) return c.json({ error: "Record not found" }, 404);
@@ -492,47 +570,8 @@ app.get("/:id/context", async (c) => {
     p = await db.query.posts.findFirst({
       where: and(
         eq(posts.id, p.replyTargetId),
-        owner == null
-          ? inArray(posts.visibility, ["public", "unlisted"])
-          : undefined,
-        owner == null
-          ? undefined
-          : notInArray(
-              posts.accountId,
-              db
-                .select({ accountId: mutes.mutedAccountId })
-                .from(mutes)
-                .where(
-                  and(
-                    eq(mutes.accountId, owner.id),
-                    or(
-                      isNull(mutes.duration),
-                      gt(
-                        sql`${mutes.created} + ${mutes.duration}`,
-                        sql`CURRENT_TIMESTAMP`,
-                      ),
-                    ),
-                  ),
-                ),
-            ),
-        owner == null
-          ? undefined
-          : notInArray(
-              posts.accountId,
-              db
-                .select({ accountId: blocks.blockedAccountId })
-                .from(blocks)
-                .where(eq(blocks.accountId, owner.id)),
-            ),
-        owner == null
-          ? undefined
-          : notInArray(
-              posts.accountId,
-              db
-                .select({ accountId: blocks.accountId })
-                .from(blocks)
-                .where(eq(blocks.blockedAccountId, owner.id)),
-            ),
+        buildVisibilityConditions(owner?.id),
+        buildMuteAndBlockConditions(owner?.id),
       ),
       with: getPostRelations(owner?.id),
     });
@@ -547,47 +586,8 @@ app.get("/:id/context", async (c) => {
     const replies = await db.query.posts.findMany({
       where: and(
         eq(posts.replyTargetId, p.id),
-        owner == null
-          ? inArray(posts.visibility, ["public", "unlisted"])
-          : undefined,
-        owner == null
-          ? undefined
-          : notInArray(
-              posts.accountId,
-              db
-                .select({ accountId: mutes.mutedAccountId })
-                .from(mutes)
-                .where(
-                  and(
-                    eq(mutes.accountId, owner.id),
-                    or(
-                      isNull(mutes.duration),
-                      gt(
-                        sql`${mutes.created} + ${mutes.duration}`,
-                        sql`CURRENT_TIMESTAMP`,
-                      ),
-                    ),
-                  ),
-                ),
-            ),
-        owner == null
-          ? undefined
-          : notInArray(
-              posts.accountId,
-              db
-                .select({ accountId: blocks.blockedAccountId })
-                .from(blocks)
-                .where(eq(blocks.accountId, owner.id)),
-            ),
-        owner == null
-          ? undefined
-          : notInArray(
-              posts.accountId,
-              db
-                .select({ accountId: blocks.accountId })
-                .from(blocks)
-                .where(eq(blocks.blockedAccountId, owner.id)),
-            ),
+        buildVisibilityConditions(owner?.id),
+        buildMuteAndBlockConditions(owner?.id),
       ),
       with: getPostRelations(owner?.id),
     });
