@@ -6,6 +6,16 @@ Version 0.6.5
 
 To be released.
 
+ -  Fixed an HTML injection vulnerability where form elements, scripts, and
+    other potentially dangerous HTML tags in federated posts were not properly
+    sanitized before rendering.  This could allow malicious actors to inject
+    forms for phishing, execute JavaScript, or perform CSRF attacks.
+    The fix implements strict HTML sanitization using an allowlist approach
+    to ensure only safe HTML elements and attributes are rendered.
+    [[CVE-2025-53941]]
+
+[CVE-2025-53941]: https://github.com/fedify-dev/hollo/security/advisories/GHSA-w7gc-g3x7-hq8h
+
 
 Version 0.6.4
 -------------

@@ -1,7 +1,7 @@
 import { escape } from "es-toolkit";
-import xss from "xss";
 import type { Account, AccountOwner } from "../schema";
 import { renderCustomEmojis } from "../text";
+import { sanitizeHtml } from "../xss";
 
 export interface AccountListProps {
   accountOwners: (AccountOwner & { account: Account })[];
@@ -24,7 +24,7 @@ interface AccountItemProps {
 function AccountItem({ accountOwner: { account } }: AccountItemProps) {
   const nameHtml = renderCustomEmojis(escape(account.name), account.emojis);
   const bioHtml = renderCustomEmojis(
-    xss(account.bioHtml ?? ""),
+    sanitizeHtml(account.bioHtml ?? ""),
     account.emojis,
   );
   const href = account.url ?? account.iri;
