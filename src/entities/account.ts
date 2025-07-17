@@ -1,6 +1,6 @@
-import xss from "xss";
 import type { Account, AccountOwner, Block, Follow, Mute } from "../schema";
 import type { Uuid } from "../uuid";
+import { sanitizeHtml } from "../xss";
 import { serializeEmojis } from "./emoji";
 
 export function serializeAccount(
@@ -30,7 +30,7 @@ export function serializeAccount(
     locked: account.protected,
     bot: account.type === "Application" || account.type === "Service",
     created_at: account.published ?? account.updated,
-    note: xss(account.bioHtml ?? ""),
+    note: sanitizeHtml(account.bioHtml ?? ""),
     url: account.url ?? account.iri,
     avatar: account.avatarUrl ?? defaultAvatarUrl,
     avatar_static: account.avatarUrl ?? defaultAvatarUrl,

@@ -62,6 +62,9 @@ importers:
       cheerio:
         specifier: ^1.0.0
         version: 1.0.0
+      cssfilter:
+        specifier: ^0.0.11
+        version: 0.0.11
       csv-writer-portable:
         specifier: ^1.7.6
         version: 1.7.6
@@ -2268,6 +2271,9 @@ packages:
 
   cssfilter@0.0.10:
     resolution: {integrity: sha512-FAaLDaplstoRsDR8XGYH51znUN0UY7nMc6Z9/fvE8EXGwvJE9hu7W2vHwx1+bd6gCYnln9nLbzxFTrcO9YQDZw==}
+
+  cssfilter@0.0.11:
+    resolution: {integrity: sha512-K7PXT5AN8qv1B/0J8wq/XV6pCDh+dUyaMqV/Lii+WA7LxoUBFXtDroBNiQm12OQ4tpYCmivdgwqWBgP6zw/Icg==}
 
   cssom@0.5.0:
     resolution: {integrity: sha512-iKuQcq+NdHqlAcwUY0o/HL69XQrUaQdMjmStJ8JFmUaiiQErlhrmuigkg/CU4E2J0IyUKUrMAgl36TvN67MqTw==}
@@ -6176,6 +6182,8 @@ snapshots:
   css-what@6.1.0: {}
 
   cssfilter@0.0.10: {}
+
+  cssfilter@0.0.11: {}
 
   cssom@0.5.0: {}
 

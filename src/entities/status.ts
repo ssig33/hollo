@@ -21,6 +21,7 @@ import {
   posts,
 } from "../schema";
 import type { Uuid } from "../uuid";
+import { sanitizeHtml } from "../xss";
 import { serializeAccount } from "./account";
 import { serializeEmojis, serializeReactions } from "./emoji";
 import { serializeMedium } from "./medium";
@@ -292,7 +293,7 @@ export function serializePost(
       currentAccountOwner == null
         ? false
         : post.pin != null && post.pin.accountId === currentAccountOwner.id,
-    content: post.contentHtml ?? "",
+    content: sanitizeHtml(post.contentHtml ?? ""),
     reblog:
       post.sharing == null
         ? null
