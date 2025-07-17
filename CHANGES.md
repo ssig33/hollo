@@ -4,7 +4,7 @@ Hollo changelog
 Version 0.6.5
 -------------
 
-To be released.
+Released on Juily 17, 2025.
 
  -  Fixed an HTML injection vulnerability where form elements, scripts, and
     other potentially dangerous HTML tags in federated posts were not properly

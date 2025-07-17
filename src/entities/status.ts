@@ -21,11 +21,11 @@ import {
   posts,
 } from "../schema";
 import type { Uuid } from "../uuid";
+import { sanitizeHtml } from "../xss";
 import { serializeAccount } from "./account";
 import { serializeEmojis, serializeReactions } from "./emoji";
 import { serializeMedium } from "./medium";
 import { serializePoll } from "./poll";
-import { sanitizeHtml } from "../xss";
 
 export function getPostRelations(ownerId: Uuid | undefined | null) {
   return {
