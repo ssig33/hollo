@@ -37,6 +37,7 @@
     "@supercharge/promise-pool": "^3.2.0",
     "argon2": "^0.41.1",
     "cheerio": "^1.0.0",
+    "cssfilter": "^0.0.11",
     "csv-writer-portable": "^1.7.6",
     "drizzle-kit": "^0.30.1",
     "drizzle-orm": "^0.38.3",

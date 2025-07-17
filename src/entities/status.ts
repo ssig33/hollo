@@ -25,6 +25,7 @@ import { serializeAccount } from "./account";
 import { serializeEmojis, serializeReactions } from "./emoji";
 import { serializeMedium } from "./medium";
 import { serializePoll } from "./poll";
+import { sanitizeHtml } from "../xss";
 
 export function getPostRelations(ownerId: Uuid | undefined | null) {
   return {
@@ -292,7 +293,7 @@ export function serializePost(
       currentAccountOwner == null
         ? false
         : post.pin != null && post.pin.accountId === currentAccountOwner.id,
-    content: post.contentHtml ?? "",
+    content: sanitizeHtml(post.contentHtml ?? ""),
     reblog:
       post.sharing == null
         ? null
