@@ -1,36 +1,65 @@
 import { zValidator } from "@hono/zod-validator";
 import { getLogger } from "@logtape/logtape";
 import { eq } from "drizzle-orm";
-import { escape } from "es-toolkit";
-import { type Context, Hono } from "hono";
-import { cors } from "hono/cors";
+import { Hono } from "hono";
 import { z } from "zod";
-import { Layout } from "./components/Layout";
-import { db } from "./db";
-import { loginRequired } from "./login";
-import { OOB_REDIRECT_URI } from "./oauth/constants";
+
+import { db } from "./db.ts";
+import { requestBody } from "./helpers.ts";
+import { loginRequired } from "./login.ts";
+import { OOB_REDIRECT_URI } from "./oauth/constants.ts";
 import {
+  calculatePKCECodeChallenge,
   createAccessGrant,
   createAccessToken,
   createClientCredential,
-} from "./oauth/helpers";
-import type { Variables } from "./oauth/middleware";
-import { scopesSchema } from "./oauth/validators";
+} from "./oauth/helpers.ts";
 import {
-  type Account,
-  type AccountOwner,
-  type Application,
-  type Scope,
-  accessGrants,
-  applications,
-  scopeEnum,
-} from "./schema";
-import { renderCustomEmojis } from "./text";
-import { uuid } from "./uuid";
+  type ClientAuthenticationVariables,
+  clientAuthentication,
+} from "./oauth/middleware.ts";
+import { scopesSchema } from "./oauth/validators.ts";
+import { accessGrants, accountOwners, applications } from "./schema.ts";
+import { uuid } from "./uuid.ts";
+
+import revokeEndpoint from "./oauth/endpoints/revoke.ts";
+import userInfoEndpoint from "./oauth/endpoints/userinfo.ts";
+
+import { AuthorizationPage } from "./pages/oauth/authorization.tsx";
+import { AuthorizationCodePage } from "./pages/oauth/authorization_code.tsx";
 
 const logger = getLogger(["hollo", "oauth"]);
 
-const app = new Hono<{ Variables: Variables }>();
+const app = new Hono<{ Variables: ClientAuthenticationVariables }>();
+
+const validatePKCEParameters = (
+  form: Partial<{ code_challenge: string; code_challenge_method: string }>,
+) => {
+  if (
+    (form.code_challenge && form.code_challenge_method === undefined) ||
+    (form.code_challenge_method && form.code_challenge === undefined)
+  ) {
+    return {
+      error: "invalid_request",
+      error_description:
+        "Missing code_challenge or code_challenge_method parameters",
+    };
+  }
+
+  if (
+    form.code_challenge_method !== undefined &&
+    form.code_challenge_method !== "S256"
+  ) {
+    return {
+      error: "invalid_request",
+      error_description:
+        "PKCE code_challenge_method must be S256, other methods are not supported",
+    };
+  }
+};
+
+app.route("/userinfo", userInfoEndpoint);
+app.route("/revoke", revokeEndpoint);
 
 app.get(
   "/authorize",
@@ -42,25 +71,40 @@ app.get(
       redirect_uri: z.string().url(),
       scope: scopesSchema.optional(),
       state: z.string().optional(),
+      // PKCE: we only support S256 code challenges
+      code_challenge: z.string().optional(),
+      code_challenge_method: z.string().optional(),
     }),
   ),
   loginRequired,
   async (c) => {
     const data = c.req.valid("query");
+
     const application = await db.query.applications.findFirst({
       where: eq(applications.clientId, data.client_id),
     });
-    if (application == null) return c.json({ error: "invalid_client_id" }, 400);
+    if (application == null) {
+      return c.json({ error: "invalid_client_id" }, 400);
+    }
+
     const scopes = data.scope ?? ["read"];
     if (scopes.some((s) => !application.scopes.includes(s))) {
       return c.json({ error: "invalid_scope" }, 400);
     }
+
     if (!application.redirectUris.includes(data.redirect_uri)) {
       return c.json({ error: "invalid_redirect_uri" }, 400);
     }
+
+    const pkceValidationError = validatePKCEParameters(data);
+    if (pkceValidationError) {
+      return c.json(pkceValidationError, 400);
+    }
+
     const accountOwners = await db.query.accountOwners.findMany({
       with: { account: true },
     });
+
     return c.html(
       <AuthorizationPage
         accountOwners={accountOwners}
@@ -68,86 +112,12 @@ app.get(
         redirectUri={data.redirect_uri}
         scopes={scopes}
         state={data.state}
+        codeChallenge={data.code_challenge}
+        codeChallengeMethod={data.code_challenge_method}
       />,
     );
   },
 );
-
-interface AuthorizationPageProps {
-  accountOwners: (AccountOwner & { account: Account })[];
-  application: Application;
-  redirectUri: string;
-  scopes: Scope[];
-  state?: string;
-}
-
-function AuthorizationPage(props: AuthorizationPageProps) {
-  return (
-    <Layout title={`Hollo: Authorize ${props.application.name}`}>
-      <hgroup>
-        <h1>Authorize {props.application.name}</h1>
-        <p>Do you want to authorize this application to access your account?</p>
-      </hgroup>
-      <p>It allows the application to:</p>
-      <ul>
-        {props.scopes.map((scope) => (
-          <li key={scope}>
-            <code>{scope}</code>
-          </li>
-        ))}
-      </ul>
-      <form action="/oauth/authorize" method="post">
-        <p>Choose an account to authorize:</p>
-        {props.accountOwners.map((accountOwner, i) => {
-          const accountName = renderCustomEmojis(
-            escape(accountOwner.account.name),
-            accountOwner.account.emojis,
-          );
-          return (
-            <label>
-              <input
-                type="radio"
-                name="account_id"
-                value={accountOwner.id}
-                checked={i === 0}
-              />
-              {/* biome-ignore lint/security/noDangerouslySetInnerHtml: xss protected */}
-              <strong dangerouslySetInnerHTML={{ __html: accountName }} />
-              <p style="margin-left: 1.75em; margin-top: 0.25em;">
-                <small>{accountOwner.account.handle}</small>
-              </p>
-            </label>
-          );
-        })}
-        <input
-          type="hidden"
-          name="application_id"
-          value={props.application.id}
-        />
-        <input type="hidden" name="redirect_uri" value={props.redirectUri} />
-        <input type="hidden" name="scopes" value={props.scopes.join(" ")} />
-        {props.state != null && (
-          <input type="hidden" name="state" value={props.state} />
-        )}
-        <div role="group">
-          {props.redirectUri !== "urn:ietf:wg:oauth:2.0:oob" && (
-            <button
-              type="submit"
-              class="secondary"
-              name="decision"
-              value="deny"
-            >
-              Deny
-            </button>
-          )}
-          <button type="submit" name="decision" value="allow">
-            Allow
-          </button>
-        </div>
-      </form>
-    </Layout>
-  );
-}
 
 app.post(
   "/authorize",
@@ -160,11 +130,15 @@ app.post(
       redirect_uri: z.string().url(),
       scopes: scopesSchema,
       state: z.string().optional(),
+      // we only support S256:
+      code_challenge: z.string().optional(),
+      code_challenge_method: z.string().optional(),
       decision: z.enum(["allow", "deny"]),
     }),
   ),
   async (c) => {
     const form = c.req.valid("form");
+
     const application = await db.query.applications.findFirst({
       where: eq(applications.id, form.application_id),
     });
@@ -173,10 +147,15 @@ app.post(
     }
 
     const accountOwner = await db.query.accountOwners.findFirst({
-      where: eq(applications.id, form.account_id),
+      where: eq(accountOwners.id, form.account_id),
     });
     if (accountOwner == null) {
       return c.notFound();
+    }
+
+    const pkceValidationError = validatePKCEParameters(form);
+    if (pkceValidationError) {
+      return c.json(pkceValidationError, 400);
     }
 
     if (form.scopes.some((s) => !application.scopes.includes(s))) {
@@ -200,6 +179,8 @@ app.post(
         accountOwner.id,
         form.scopes,
         form.redirect_uri,
+        form.code_challenge,
+        form.code_challenge_method,
       );
 
       if (form.redirect_uri === OOB_REDIRECT_URI) {
@@ -221,101 +202,70 @@ app.post(
   },
 );
 
-interface AuthorizationCodePageProps {
-  application: Application;
-  code: string;
-}
-
-function AuthorizationCodePage(props: AuthorizationCodePageProps) {
-  return (
-    <Layout title={"Hollo: Authorization Code"}>
-      <hgroup>
-        <h1>Authorization Code</h1>
-        <p>Here is your authorization code.</p>
-      </hgroup>
-      <pre>{props.code}</pre>
-      <p>
-        Copy this code and paste it into <em>{props.application.name}</em>.
-      </p>
-    </Layout>
-  );
-}
-
 const INVALID_GRANT_ERROR_DESCRIPTION =
   "The provided authorization code is invalid, expired, revoked, " +
   "does not match the redirection URI used in the authorization " +
   "request, or was issued to another client.";
 
-const tokenRequestSchema = z.object({
-  grant_type: z.enum(["authorization_code", "client_credentials"]),
-  client_id: z.string(),
-  client_secret: z.string(),
-  redirect_uri: z.string().url().optional(),
-  code: z.string().optional(),
-  scope: scopesSchema.optional(),
-});
+const INVALID_GRANT_ERROR = {
+  error: "invalid_grant",
+  error_description: INVALID_GRANT_ERROR_DESCRIPTION,
+};
 
-app.post("/token", cors(), async (c) => {
-  let form: z.infer<typeof tokenRequestSchema>;
-  const contentType = c.req.header("Content-Type");
-  if (
-    contentType === "application/json" ||
-    contentType?.match(/^application\/json\s*;/)
-  ) {
-    const json = await c.req.json();
-    const result = await tokenRequestSchema.safeParseAsync(json);
-    if (!result.success) {
-      return c.json({ error: "Invalid request", zod_error: result.error }, 400);
-    }
-    form = result.data;
-  } else {
-    const formData = await c.req.parseBody();
-    const result = await tokenRequestSchema.safeParseAsync(formData);
-    if (!result.success) {
-      return c.json({ error: "Invalid request", zod_error: result.error }, 400);
-    }
-    form = result.data;
-  }
+const tokenRequestSchema = z.discriminatedUnion("grant_type", [
+  // Use z.object() instead of z.strictObject() to allow clients to send
+  // additional parameters like 'redirect_uri' which are commonly sent but not
+  // required by RFC 6749 for client_credentials grant type.
+  // See also <https://github.com/fedify-dev/hollo/issues/163>:
+  z.object({
+    grant_type: z.literal("client_credentials"),
+    scope: scopesSchema.optional(),
+    // client_id and client_secret are present but consumed by the
+    // clientAuthentication middleware:
+    client_id: z.string().optional(),
+    client_secret: z.string().optional(),
+  }),
+  // Use z.object() instead of z.strictObject() to allow clients to send
+  // additional parameters like 'scope' which are commonly sent but not
+  // required by RFC 6749 for authorization_code grant type.
+  // See also <https://github.com/fedify-dev/hollo/issues/163>:
+  z.object({
+    grant_type: z.literal("authorization_code"),
+    redirect_uri: z.string().url(),
+    code: z.string(),
+    code_verifier: z.string().optional(),
+    // client_id and client_secret are present but consumed by the
+    // clientAuthentication middleware:
+    client_id: z.string().optional(),
+    client_secret: z.string().optional(),
+  }),
+]);
 
-  const application = await db.query.applications.findFirst({
-    where: eq(applications.clientId, form.client_id),
-  });
-  if (application == null || application.clientSecret !== form.client_secret) {
-    return c.json(
-      {
-        error: "invalid_client",
-        error_description:
-          "Client authentication failed due to unknown client, " +
-          "no client authentication included, or unsupported authentication " +
-          "method.",
-      },
-      401,
-    );
-  }
+app.post("/token", clientAuthentication, async (c) => {
+  const client = c.get("client");
+  const result = await requestBody(c.req, tokenRequestSchema);
 
-  if (form.grant_type === "authorization_code") {
-    if (form.code === undefined) {
+  if (!result.success) {
+    if (
+      result.error.errors.length === 1 &&
+      result.error.errors[0].code === "invalid_union_discriminator"
+    ) {
       return c.json(
         {
-          error: "invalid_request",
-          error_description: "The authorization code is required.",
-        },
-        400,
-      );
-    }
-
-    const authorizationCode = form.code;
-
-    if (!form.redirect_uri) {
-      return c.json(
-        {
-          error: "invalid_request",
+          error: "unsupported_grant_type",
           error_description:
-            "The authorization code grant flow requires a redirect URI.",
+            "The authorization grant type is not supported by the authorization server.",
         },
         400,
       );
     }
+
+    return c.json({ error: "invalid_request", zod_error: result.error }, 400);
+  }
+
+  const form = result.data;
+  if (form.grant_type === "authorization_code") {
+    const authorizationCode = form.code;
 
     return await db
       .transaction(
@@ -331,38 +281,37 @@ app.post("/token", cors(), async (c) => {
 
           if (
             accessGrant === undefined ||
-            accessGrant.applicationId !== application.id ||
+            accessGrant.applicationId !== client.id ||
             accessGrant?.revoked !== null
           ) {
-            return c.json(
-              {
-                error: "invalid_grant",
-                error_description: INVALID_GRANT_ERROR_DESCRIPTION,
-              },
-              400,
+            return c.json(INVALID_GRANT_ERROR, 400);
+          }
+
+          if (accessGrant.codeChallenge && accessGrant.codeChallengeMethod) {
+            if (
+              !form.code_verifier ||
+              accessGrant.codeChallengeMethod !== "S256"
+            ) {
+              return c.json(INVALID_GRANT_ERROR, 400);
+            }
+
+            const expectedCodeChallenge = await calculatePKCECodeChallenge(
+              form.code_verifier,
             );
+
+            if (expectedCodeChallenge !== accessGrant.codeChallenge) {
+              return c.json(INVALID_GRANT_ERROR, 400);
+            }
           }
 
           const notAfter =
             accessGrant.created.valueOf() + accessGrant.expiresIn;
           if (Date.now() > notAfter) {
-            return c.json(
-              {
-                error: "invalid_grant",
-                error_description: INVALID_GRANT_ERROR_DESCRIPTION,
-              },
-              400,
-            );
+            return c.json(INVALID_GRANT_ERROR, 400);
           }
 
           if (accessGrant.redirectUri !== form.redirect_uri) {
-            return c.json(
-              {
-                error: "invalid_grant",
-                error_description: INVALID_GRANT_ERROR_DESCRIPTION,
-              },
-              400,
-            );
+            return c.json(INVALID_GRANT_ERROR, 400);
           }
 
           // Revoke the access grant:
@@ -376,6 +325,8 @@ app.post("/token", cors(), async (c) => {
           // create the access token
           const accessToken = await createAccessToken(accessGrant, tx);
 
+          /* v8 ignore start */
+          // TODO: This scenario requires an insert to the database failing, so not sure how to test:
           if (accessToken === undefined) {
             return c.json(
               {
@@ -386,6 +337,7 @@ app.post("/token", cors(), async (c) => {
               500,
             );
           }
+          /* v8 ignore stop */
 
           return c.json(
             {
@@ -403,6 +355,8 @@ app.post("/token", cors(), async (c) => {
           deferrable: true,
         },
       )
+      /* v8 ignore start */
+      /* I'm not sure how we'd ever test this scenario */
       .catch((err) => {
         logger.error("An unknown error occurred", err);
 
@@ -415,32 +369,23 @@ app.post("/token", cors(), async (c) => {
           500,
         );
       });
+    /* v8 ignore stop */
   }
 
   if (form.grant_type === "client_credentials") {
-    if (form.code) {
+    // Public clients cannot use the client_credentials grant flow
+    if (!client.confidential) {
       return c.json(
         {
-          error: "invalid_request",
+          error: "unauthorized_client",
           error_description:
-            "The client credentials grant flow does not accept a code parameter.",
+            "The authenticated client is not authorized to use this authorization grant type.",
         },
         400,
       );
     }
 
-    if (form.redirect_uri) {
-      return c.json(
-        {
-          error: "invalid_request",
-          error_description:
-            "The client credentials grant flow does not accept a redirect_uri parameter.",
-        },
-        400,
-      );
-    }
-
-    if (form.scope?.some((s) => !application.scopes.includes(s))) {
+    if (form.scope?.some((s) => !client.scopes.includes(s))) {
       return c.json(
         {
           error: "invalid_scope",
@@ -451,10 +396,7 @@ app.post("/token", cors(), async (c) => {
       );
     }
 
-    const clientCredential = await createClientCredential(
-      application,
-      form.scope,
-    );
+    const clientCredential = await createClientCredential(client, form.scope);
 
     return c.json({
       access_token: clientCredential.token,
@@ -463,37 +405,6 @@ app.post("/token", cors(), async (c) => {
       created_at: clientCredential.created,
     });
   }
-
-  return c.json(
-    {
-      error: "unsupported_grant_type",
-      error_description:
-        "The authorization grant type is not supported by the authorization server.",
-    },
-    400,
-  );
 });
-
-export async function oauthAuthorizationServer(c: Context) {
-  const url = new URL(c.req.url);
-
-  return c.json({
-    issuer: new URL("/", url).href,
-    authorization_endpoint: new URL("/oauth/authorize", url).href,
-    token_endpoint: new URL("/oauth/token", url).href,
-    // Not yet supported by Hollo:
-    // "revocation_endpoint": "",
-    scopes_supported: scopeEnum.enumValues,
-    response_types_supported: ["code"],
-    response_modes_supported: ["query"],
-    grant_types_supported: ["authorization_code", "client_credentials"],
-    token_endpoint_auth_methods_supported: [
-      "client_secret_post",
-      // Not supported by Hollo:
-      // "client_secret_basic",
-    ],
-    app_registration_endpoint: new URL("/api/v1/apps", url).href,
-  });
-}
 
 export default app;

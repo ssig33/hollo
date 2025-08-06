@@ -1,10 +1,104 @@
 Hollo changelog
 ===============
 
-Version 0.6.0
+Version 0.7.0
 -------------
 
 To be released.
+
+ -  Fixed `POST /api/v1/statuses` and `PUT /api/v1/statuses/:id` endpoints
+    rejecting FormData requests.  These endpoints now properly accept both
+    JSON and FormData content types, improving compatibility with Mastodon
+    clients that send `multipart/form-data` requests.
+    [[#170], [#171] by Emelia Smith]
+
+ -  Fixed a bug where multiple JSON objects were written on a single line
+    in log files when `LOG_FILE` environment variable was set.  Upgraded
+    LogTape to 1.0 and now uses `jsonLinesFormatter` to ensure proper
+    JSON Lines format with one JSON object per line.  [[#174]]
+
+[#170]: https://github.com/fedify-dev/hollo/issues/170
+[#171]: https://github.com/fedify-dev/hollo/pull/171
+[#174]: https://github.com/fedify-dev/hollo/pull/174
+
+
+Version 0.6.5
+-------------
+
+Released on Juily 17, 2025.
+
+ -  Fixed an HTML injection vulnerability where form elements, scripts, and
+    other potentially dangerous HTML tags in federated posts were not properly
+    sanitized before rendering.  This could allow malicious actors to inject
+    forms for phishing, execute JavaScript, or perform CSRF attacks.
+    The fix implements strict HTML sanitization using an allowlist approach
+    to ensure only safe HTML elements and attributes are rendered.
+    [[CVE-2025-53941]]
+
+[CVE-2025-53941]: https://github.com/fedify-dev/hollo/security/advisories/GHSA-w7gc-g3x7-hq8h
+
+
+Version 0.6.4
+-------------
+
+Released on July 7, 2025.
+
+ -  Fixed a regression bug where follower-only posts were returning `404 Not
+    Found` errors when accessed through conversation threads. This was caused
+    by improper OAuth scope checking that only accepted `read:statuses` scope
+    but tokens contain `read` scope:  [[#169], [#172]]
+
+     -  `GET /api/v1/statuses/:id`
+     -  `GET /api/v1/statuses/:id/context`
+
+[#169]: https://github.com/fedify-dev/hollo/issues/169
+[#172]: https://github.com/fedify-dev/hollo/pull/172
+
+
+Version 0.6.3
+-------------
+
+Released on June 23, 2025.
+
+ -  Fixed a bug where remote posts mentioning the same user multiple times
+    could not be retrieved due to database constraint violations.
+
+
+Version 0.6.2
+-------------
+
+Released on June 8, 2025.
+
+ -  Fixed an issue where Hollo 0.6.x installations upgraded from Hollo 0.5.x
+    or earlier failed to sign in with Elk, a popular Mastodon client.
+    This was caused by old application registrations incorrectly defaulting
+    to non-confidential.  All existing applications are now properly set as
+    confidential clients.  [[#167], [#168] by Emelia Smith]
+
+[#167]: https://github.com/fedify-dev/hollo/issues/167
+[#168]: https://github.com/fedify-dev/hollo/pull/168
+
+
+Version 0.6.1
+-------------
+
+Released on June 5, 2025.
+
+ -  Fixed `POST /oauth/token` endpoint rejecting requests with additional
+    parameters not required by RFC 6749 but commonly sent by clients.
+    The endpoint now gracefully ignores extra parameters like `scope` in
+    `authorization_code` requests and `redirect_uri` in `client_credentials`
+    requests instead of returning validation errors.
+    [[#163], [#164] by Hong Minhee]
+
+[#163]: https://github.com/fedify-dev/hollo/issues/163
+[#164]: https://github.com/fedify-dev/hollo/pull/164
+
+
+Version 0.6.0
+-------------
+
+Released on June 5, 2025.
 
  -  Revamped the environment variables for asset storage configuration.
     [[#115], [#121] by Emelia Smith]
@@ -48,13 +142,41 @@ To be released.
  -  The current version string is displayed at the bottom of the dashboard page.
     [[#136], [#137] by RangHo Lee]
 
- -  Increased the maximum character limit for posts from 4,096 to 10,000 characters.
+ -  Increased the maximum character limit for posts from 4,096 to 10,000
+    characters.
 
- -  Upgraded Fedify to 1.5.1 and *@fedify/postgres* to 0.3.0.
+ -  EXIF metadata of attached images are now stripped before storing them
+    to prevent privacy leaks.  [[#152] by NTSK]
+
+ -  Code blocks inside Markdown are now highlighted.  The syntax highlighting is
+    powered By [Shiki].  See also the [complete list of supported languages].
+    [[#149]]
+
+ -  Implemented OAuth 2.0 Proof Key for Code Exchange (PKCE) support with the
+    `S256` code challenge method.  This enhances security by preventing
+    authorization code interception attacks in the OAuth authorization flow.
+    [[#155] by Emelia Smith]
+
+ -  Added support for the `profile` OAuth scope for enhanced user authentication.
+    This allows applications to request limited profile information using the
+    new `/oauth/userinfo` endpoint and enables the `profile` scope to be used
+    with the `GET /api/v1/accounts/verify_credentials` endpoint.
+    [[#45], [#156] by Emelia Smith]
+
+ -  Made few Mastodon API endpoints publicly accessible without
+    authentication so that they behave more similarly to Mastodon:
+
+     -  `GET /api/v1/statuses/:id`
+     -  `GET /api/v1/statuses/:id/context`
+
+ -  Upgraded Fedify to 1.5.3 and *@fedify/postgres* to 0.3.0.
 
  -  The minimum required version of Node.js is now 24.0.0.
 
 [*Colors* section]: https://picocss.com/docs/colors
+[Shiki]: https://shiki.style/
+[complete list of supported languages]: https://shiki.style/languages
+[#45]: https://github.com/fedify-dev/hollo/issues/45
 [#50]: https://github.com/fedify-dev/hollo/issues/50
 [#110]: https://github.com/fedify-dev/hollo/pull/110
 [#111]: https://github.com/fedify-dev/hollo/issues/111
@@ -67,6 +189,10 @@ To be released.
 [#130]: https://github.com/fedify-dev/hollo/pull/130
 [#136]: https://github.com/fedify-dev/hollo/issues/136
 [#137]: https://github.com/fedify-dev/hollo/pull/137
+[#149]: https://github.com/fedify-dev/hollo/issues/149
+[#152]: https://github.com/fedify-dev/hollo/pull/152
+[#155]: https://github.com/fedify-dev/hollo/pull/155
+[#156]: https://github.com/fedify-dev/hollo/pull/156
 
 
 Version 0.5.6

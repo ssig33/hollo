@@ -463,6 +463,34 @@
       "when": 1741623334620,
       "tag": "0065_change_oauth_access_grants_token_to_code",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1747007123812,
+      "tag": "0066_add_oauth_application_confidentiality",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1748209114780,
+      "tag": "0067_add_pkce_to_access_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1748827411086,
+      "tag": "0068_add_profile_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1749309918513,
+      "tag": "0069_repair-application-confidentiality",
+      "breakpoints": true
     }
   ]
 }

@@ -23,7 +23,7 @@ export function serializeEmoji(
 
 export function serializeReaction(
   reaction: Reaction & { account: Account },
-  currentAccountOwner: { id: string },
+  currentAccountOwner: { id: string } | undefined | null,
 ): Record<string, unknown> {
   const [result] = serializeReactions([reaction], currentAccountOwner);
   return result;
@@ -31,7 +31,7 @@ export function serializeReaction(
 
 export function serializeReactions(
   reactions: (Reaction & { account: Account })[],
-  currentAccountOwner: { id: string },
+  currentAccountOwner: { id: string } | undefined | null,
 ): Record<string, unknown>[] {
   const result: Record<
     string,
@@ -49,7 +49,9 @@ export function serializeReactions(
       reaction.customEmoji == null
         ? reaction.emoji
         : `${reaction.emoji}\n${domain}`;
-    const me = reaction.account.id === currentAccountOwner.id;
+    const me =
+      currentAccountOwner != null &&
+      reaction.account.id === currentAccountOwner.id;
     if (key in result) {
       result[key].count++;
       result[key].me ||= me;

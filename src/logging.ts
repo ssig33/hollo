@@ -1,11 +1,12 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { Writable } from "node:stream";
+import { getFileSink } from "@logtape/file";
 import {
   type LogLevel,
   configure,
   getAnsiColorFormatter,
-  getFileSink,
   getStreamSink,
+  jsonLinesFormatter,
   parseLogLevel,
 } from "@logtape/logtape";
 
@@ -28,7 +29,7 @@ await configure({
       LOG_FILE == null
         ? () => undefined
         : getFileSink(LOG_FILE, {
-            formatter: JSON.stringify.bind(JSON),
+            formatter: jsonLinesFormatter,
           }),
   },
   filters: {},

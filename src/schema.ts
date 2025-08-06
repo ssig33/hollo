@@ -290,6 +290,7 @@ export const scopeEnum = pgEnum("scope", [
   "write:statuses",
   "follow",
   "push",
+  "profile",
 ]);
 
 export type Scope = (typeof scopeEnum.enumValues)[number];
@@ -302,6 +303,7 @@ export const applications = pgTable("applications", {
   website: text("website"),
   clientId: text("client_id").notNull().unique(),
   clientSecret: text("client_secret").notNull(),
+  confidential: boolean("confidential").default(false).notNull(),
   created: timestamp("created", { withTimezone: true })
     .notNull()
     .default(currentTimestamp),
@@ -322,6 +324,8 @@ export const accessGrants = pgTable(
     expiresIn: integer("expires_in").notNull(),
     redirectUri: text("redirect_uri").notNull(),
     scopes: scopeEnum("scopes").array().notNull(),
+    codeChallenge: text("code_challenge"),
+    codeChallengeMethod: varchar("code_challenge_method", { length: 256 }),
     applicationId: uuid("application_id")
       .$type<Uuid>()
       .notNull()

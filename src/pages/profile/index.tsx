@@ -60,7 +60,7 @@ profile.get<"/:handle">(async (c) => {
       ),
     );
   const maxPage = Math.ceil(totalPosts / PAGE_SIZE);
-  if (page > maxPage) {
+  if (page > maxPage && !(page <= 1 && totalPosts < 1)) {
     return c.notFound();
   }
   const postList = await db.query.posts.findMany({

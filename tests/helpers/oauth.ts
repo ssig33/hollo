@@ -1,107 +1,137 @@
 import { exportJwk, generateCryptoKeyPair } from "@fedify/fedify";
-import { base64 } from "@hexagon/base64";
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 
 import db from "../../src/db";
 import * as Schema from "../../src/schema";
 
+import { base64 } from "@hexagon/base64";
+import { randomBytes } from "../../src/helpers";
 import { OOB_REDIRECT_URI } from "../../src/oauth/constants";
-import { createAccessGrant, createAccessToken } from "../../src/oauth/helpers";
+import {
+  type AccessGrant,
+  createAccessGrant,
+  createAccessToken,
+  createClientCredential,
+} from "../../src/oauth/helpers";
+
+export function basicAuthorization(
+  application: Pick<Schema.Application, "clientId" | "clientSecret">,
+) {
+  const credential = base64.fromString(
+    `${application.clientId}:${application.clientSecret}`,
+  );
+
+  return `Basic ${credential}`;
+}
+
+export function bearerAuthorization(token: Token) {
+  return `Bearer ${token.token}`;
+}
+
+type createAccountOptions = {
+  generateKeyPair?: boolean;
+  username?: string;
+};
 
 export async function createAccount(
-  options = { generateKeyPair: false },
+  options: createAccountOptions = { generateKeyPair: false },
 ): Promise<Pick<Schema.Account, "id">> {
-  const account = await db.transaction(async (tx) => {
-    await tx
-      .insert(Schema.instances)
-      .values({
-        host: "http://hollo.test",
-        software: "hollo",
-        softwareVersion: null,
-      })
-      .onConflictDoNothing();
+  const username = options.username ?? "hollo";
 
-    const account = await tx
-      .insert(Schema.accounts)
-      .values({
-        id: crypto.randomUUID(),
-        iri: "http://hollo.test/@hollo",
-        instanceHost: "http://hollo.test",
+  const account = await db.transaction(
+    async (tx) => {
+      await tx
+        .insert(Schema.instances)
+        .values({
+          host: "hollo.test",
+          software: "hollo",
+          softwareVersion: null,
+        })
+        .onConflictDoNothing();
+
+      const accountId = crypto.randomUUID();
+      const accountIri = `https://hollo.test/@${username}`;
+      const accountUrl = `https://hollo.test/@${username}`;
+
+      await tx.insert(Schema.accounts).values({
+        id: accountId,
+        iri: accountIri,
+        instanceHost: "hollo.test",
         type: "Person",
-        name: "Hollo Test",
+        name: `Test: ${username}`,
         emojis: {},
-        handle: "@hollo@hollo.test",
+        handle: `@${username}@hollo.test`,
         bioHtml: "",
-        url: "https://hollo.test/@hollo",
+        url: accountUrl,
         protected: false,
-        inboxUrl: "https://hollo.test/@hollo/inbox",
-        followersUrl: "https://hollo.test/@hollo/followers",
+        inboxUrl: `${accountIri}/inbox`,
+        followersUrl: `${accountIri}/followers`,
         sharedInboxUrl: "https://hollo.test/inbox",
-        featuredUrl: "https://hollo.test/@hollo/pinned",
+        featuredUrl: `${accountIri}/pinned`,
         published: new Date(),
-      })
-      .returning({ id: Schema.accounts.id });
+      });
 
-    const keyPairs: {
-      rsaPrivateKeyJwk: object;
-      rsaPublicKeyJwk: object;
-      ed25519PrivateKeyJwk: object;
-      ed25519PublicKeyJwk: object;
-    } = {
-      rsaPrivateKeyJwk: {},
-      rsaPublicKeyJwk: {},
-      ed25519PrivateKeyJwk: {},
-      ed25519PublicKeyJwk: {},
-    };
+      const keyPairs: {
+        rsaPrivateKeyJwk: object;
+        rsaPublicKeyJwk: object;
+        ed25519PrivateKeyJwk: object;
+        ed25519PublicKeyJwk: object;
+      } = {
+        rsaPrivateKeyJwk: {},
+        rsaPublicKeyJwk: {},
+        ed25519PrivateKeyJwk: {},
+        ed25519PublicKeyJwk: {},
+      };
 
-    if (options.generateKeyPair) {
-      const rsaKeyPair = await generateCryptoKeyPair("RSASSA-PKCS1-v1_5");
-      const ed25519KeyPair = await generateCryptoKeyPair("Ed25519");
+      if (options.generateKeyPair) {
+        const rsaKeyPair = await generateCryptoKeyPair("RSASSA-PKCS1-v1_5");
+        const ed25519KeyPair = await generateCryptoKeyPair("Ed25519");
 
-      keyPairs.rsaPrivateKeyJwk = await exportJwk(rsaKeyPair.privateKey);
-      keyPairs.rsaPublicKeyJwk = await exportJwk(rsaKeyPair.publicKey);
-      keyPairs.ed25519PrivateKeyJwk = await exportJwk(
-        ed25519KeyPair.privateKey,
-      );
-      keyPairs.ed25519PublicKeyJwk = await exportJwk(ed25519KeyPair.publicKey);
-    }
+        keyPairs.rsaPrivateKeyJwk = await exportJwk(rsaKeyPair.privateKey);
+        keyPairs.rsaPublicKeyJwk = await exportJwk(rsaKeyPair.publicKey);
+        keyPairs.ed25519PrivateKeyJwk = await exportJwk(
+          ed25519KeyPair.privateKey,
+        );
+        keyPairs.ed25519PublicKeyJwk = await exportJwk(
+          ed25519KeyPair.publicKey,
+        );
+      }
 
-    await tx
-      .insert(Schema.accountOwners)
-      .values({
-        id: account[0].id,
-        handle: "hollo",
+      await tx.insert(Schema.accountOwners).values({
+        id: accountId,
+        handle: username,
         ...keyPairs,
         bio: "",
         language: "en",
         visibility: "public",
         themeColor: "amber",
         discoverable: false,
-      })
-      .returning({ id: Schema.accountOwners.id });
+      });
 
-    return account;
-  });
+      return { id: accountId };
+    },
+    {
+      isolationLevel: "read committed",
+      accessMode: "read write",
+    },
+  );
 
-  return account[0];
+  return account;
 }
 
 export type OAuthApplicationOptions = {
   scopes?: Schema.Scope[];
   redirectUris?: string[];
+  confidential?: boolean;
 };
 
 export async function createOAuthApplication(
-  options: OAuthApplicationOptions = { redirectUris: [OOB_REDIRECT_URI] },
+  options: OAuthApplicationOptions = {
+    redirectUris: [OOB_REDIRECT_URI],
+  },
 ): Promise<Pick<Schema.Application, "id">> {
-  const clientId = base64.fromArrayBuffer(
-    crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer,
-    true,
-  );
-  const clientSecret = base64.fromArrayBuffer(
-    crypto.getRandomValues(new Uint8Array(32)).buffer as ArrayBuffer,
-    true,
-  );
+  const clientId = randomBytes(16);
+  const clientSecret = options.confidential === true ? randomBytes(32) : "";
 
   const app = await db
     .insert(Schema.applications)
@@ -113,6 +143,7 @@ export async function createOAuthApplication(
       website: "",
       clientId,
       clientSecret,
+      confidential: !!options.confidential,
     } satisfies Schema.NewApplication)
     .returning({
       id: Schema.applications.id,
@@ -136,12 +167,40 @@ export async function getApplication(
   return application;
 }
 
+export async function getLastApplication(): Promise<Schema.Application> {
+  const result = await db
+    .select()
+    .from(Schema.applications)
+    .orderBy(desc(Schema.applications.created))
+    .limit(1);
+
+  if (result.length !== 1) {
+    throw new Error("Could not retrieve last created application");
+  }
+
+  return result[0];
+}
+
+export async function countApplications(): Promise<number> {
+  const result = await db.select({ count: count() }).from(Schema.applications);
+  if (result.length !== 1) {
+    throw new Error("Could not count applications");
+  }
+
+  return result[0].count;
+}
+
+export type Token = {
+  token: string;
+  scopes: string[];
+};
+
 export async function getAccessToken(
   client: Pick<Schema.Application, "id">,
   account: Pick<Schema.Account, "id">,
   scopes: Schema.Scope[] = [],
   redirect_uri: string = OOB_REDIRECT_URI,
-) {
+): Promise<Token> {
   const application = await getApplication(client);
   const { code } = await createAccessGrant(
     application.id,
@@ -165,8 +224,25 @@ export async function getAccessToken(
   }
 
   return {
-    authorizationHeader: `${accessToken.type} ${accessToken.token}`,
+    token: accessToken.token,
     scopes: accessToken.scope.split(" "),
+  };
+}
+
+export async function getClientCredentialToken(
+  client: Pick<Schema.Application, "id">,
+  scopes: Schema.Scope[] = [],
+): Promise<Token> {
+  const application = await getApplication(client);
+  const clientCredential = await createClientCredential(application, scopes);
+
+  if (!clientCredential) {
+    throw new Error("Failed to issue client credential for test");
+  }
+
+  return {
+    token: clientCredential.token,
+    scopes: clientCredential.scope.split(" "),
   };
 }
 
@@ -198,7 +274,23 @@ export async function getLastAccessGrant(): Promise<Schema.AccessGrant> {
   return result[0];
 }
 
-export async function getAccessGrant(
+export async function revokeAccessGrant(
+  accessGrant: AccessGrant,
+): Promise<void> {
+  const updated = await db
+    .update(Schema.accessGrants)
+    .set({
+      revoked: new Date(),
+    })
+    .where(eq(Schema.accessGrants.code, accessGrant.code))
+    .returning({ updated: Schema.accessGrants.code });
+
+  if (updated.length !== 1) {
+    throw new Error("Failed to revoke access grant");
+  }
+}
+
+export async function findAccessGrant(
   code: string,
 ): Promise<Schema.AccessGrant> {
   const accessGrant = await db.query.accessGrants.findFirst({
@@ -211,4 +303,14 @@ export async function getAccessGrant(
   }
 
   return accessGrant;
+}
+
+export async function findAccessToken(
+  token: string,
+): Promise<Schema.AccessToken | undefined> {
+  const accessToken = await db.query.accessTokens.findFirst({
+    where: eq(Schema.accessTokens.code, token),
+  });
+
+  return accessToken;
 }

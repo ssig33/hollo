@@ -8,4 +8,7 @@ mise.local.toml
 .envrc
 my-compose.yml
 
+coverage/**
+!coverage/.gitkeep
+
 **/.claude/settings.local.json

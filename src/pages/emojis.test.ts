@@ -1,5 +1,4 @@
-import { afterEach, beforeEach, describe, it } from "node:test";
-import type { TestContext } from "node:test";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { getFixtureFile } from "../../tests/helpers";
 import { getLoginCookie } from "../../tests/helpers/web";
@@ -12,16 +11,18 @@ import app from "./index";
 
 const emojiFile = await getFixtureFile("emoji.png", "image/png");
 
-describe("emojis", () => {
+describe.sequential("emojis", () => {
   beforeEach(async () => {
     await db.delete(customEmojis);
+
+    return () => {
+      drive.restore();
+    };
   });
 
-  afterEach(() => {
-    drive.restore();
-  });
+  it("Successfully saves a new emoji", async () => {
+    expect.assertions(4);
 
-  it("Successfully saves a new emoji", async (t: TestContext) => {
     const disk = drive.fake();
     const testShortCode = ":test-emoji:";
 
@@ -39,21 +40,18 @@ describe("emojis", () => {
       },
     });
 
-    t.assert.equal(response.status, 302);
-    t.assert.equal(response.headers.get("Location"), "/emojis");
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/emojis");
 
     // Assert we uploaded the file:
-    t.assert.doesNotThrow(() => disk.assertExists("emojis/test-emoji.png"));
+    expect(() => disk.assertExists("emojis/test-emoji.png")).not.toThrowError();
 
     const emoji = await db.query.customEmojis.findFirst();
 
-    t.assert.ok(emoji, "Successfully saves the emoji");
-    t.assert.equal(emoji.category, null, "Defaults category to null");
-    t.assert.equal(
-      emoji.url,
-      "http://hollo.test/assets/emojis/test-emoji.png",
-      "Sets the file URL correctly",
-    );
-    t.assert.equal(emoji.shortcode, "test-emoji");
+    expect(emoji).toMatchObject({
+      category: null,
+      url: "http://hollo.test/assets/emojis/test-emoji.png",
+      shortcode: "test-emoji",
+    });
   });
 });

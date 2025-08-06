@@ -2,6 +2,7 @@ import { type DocumentLoader, isActor, lookupObject } from "@fedify/fedify";
 import { hashtag } from "@fedify/markdown-it-hashtag";
 import { mention } from "@fedify/markdown-it-mention";
 import { getLogger } from "@logtape/logtape";
+import Shiki from "@shikijs/markdown-it";
 import * as cheerio from "cheerio";
 import { type ExtractTablesWithRelations, inArray } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
@@ -36,6 +37,14 @@ interface Env {
 }
 
 const CUSTOM_EMOJI_REGEXP = /:([a-z0-9_-]+):/gi;
+
+const shiki = await Shiki({
+  themes: {
+    light: "one-light",
+    dark: "one-dark-pro",
+  },
+  defaultColor: "light-dark()",
+});
 
 export async function formatText(
   db: PgDatabase<
@@ -149,7 +158,8 @@ export async function formatText(
         }
         return new URL(link, new URL("/", options.url)).href;
       },
-    });
+    })
+    .use(shiki);
   const env: Env = {
     hashtags: [],
     previewLink: null,
@@ -327,4 +337,4 @@ export async function formatPostContent(
   return result;
 }
 
-// cSpell: ignore linkify
+// cSpell: ignore linkify shiki shikijs

@@ -9,7 +9,8 @@ import { cors } from "hono/cors";
 import api from "./api";
 import fedi from "./federation";
 import image from "./image";
-import oauth, { oauthAuthorizationServer } from "./oauth";
+import oauth from "./oauth";
+import oauthMetadataEndpoint from "./oauth/endpoints/metadata";
 import pages from "./pages";
 import { DRIVE_DISK, FS_STORAGE_PATH } from "./storage";
 
@@ -51,7 +52,10 @@ app.use("/nodeinfo/*", CorsPolicy(["GET"]));
 app.use("/oauth/token", CorsPolicy(["POST", "OPTIONS"]));
 // Hollo doesn't support token revocation currently:
 // app.use("/oauth/revoke", CorsPolicy(["POST"]));
+app.use("/oauth/revoke", CorsPolicy(["POST"]));
 app.use("/oauth/userinfo", CorsPolicy(["GET", "POST"]));
+
+app.route("/.well-known/oauth-authorization-server", oauthMetadataEndpoint);
 
 app.use(federation(fedi, (_) => undefined));
 
@@ -60,7 +64,6 @@ app.route("/oauth", oauth);
 app.route("/api", api);
 app.route("/image", image);
 
-app.get("/.well-known/oauth-authorization-server", oauthAuthorizationServer);
 app.get("/nodeinfo/2.0", (c) => c.redirect("/nodeinfo/2.1"));
 
 export default app;
